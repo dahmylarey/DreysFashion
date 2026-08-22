@@ -1,0 +1,202 @@
+﻿@page "/admin/orders"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IOrderService OrderService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Manage Orders | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+
+        <div>
+            <p class="eyebrow text-muted">DREY'S FASHION</p>
+            <h1 class="h3 mb-1">Manage Orders</h1>
+            <p class="text-muted mb-0">View customer orders and manage their status.</p>
+        </div>
+
+        <div class="admin-toolbar d-flex gap-2">
+            <a href="/admin" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-2"></i> Dashboard
+            </a>
+        </div>
+
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (!orders.Any())
+    {
+        <div class="d-flex align-items-center justify-content-center py-5">
+            <div class="card text-center p-4">
+                <div class="card-body">
+                    <i class="fas fa-receipt fa-2x text-muted mb-3"></i>
+                    <h5 class="card-title">No Orders Yet</h5>
+                    <p class="card-text text-muted">Customer orders will appear here.</p>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="admin-product-table table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var order in orders)
+                    {
+                        var oid = order.Id;
+                        <tr>
+                            <td><strong>#@order.Id</strong></td>
+
+                            <td>
+                                <div class="fw-semibold">@order.CustomerName</div>
+                                <div class="text-muted small">@order.CustomerEmail</div>
+                            </td>
+
+                            <td>@order.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+
+                            <td>₦@order.TotalAmount.ToString("N0")</td>
+
+                            <td>
+                                @if (order.Status == "Paid" || order.Status == "Processing" || order.Status == "Shipped" || order.Status == "Delivered")
+                                {
+                                    <span class="badge bg-success">Paid</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pending</span>
+                                }
+                            </td>
+
+                            <td>
+                                <select class="form-select form-select-sm" value="@order.Status" @onchange="(e) => ChangeStatus(oid, e.Value?.ToString())">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Paid">Paid</option>
+                                    <option value="Processing">Processing</option>
+                                    <option value="Shipped">Shipped</option>
+                                    <option value="Delivered">Delivered</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </td>
+
+                            <td class="text-end">
+                                <a href="/order-confirmation/@order.Id" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private List<Order> orders = new();
+
+    private bool loading = true;
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            orders =
+                await OrderService.GetAllOrdersAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load orders: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task ChangeStatus(
+        int orderId,
+        string? status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return;
+        }
+
+        try
+        {
+            errorMessage = null;
+
+            var updated =
+                await OrderService.UpdateOrderStatusAsync(
+                    orderId,
+                    status);
+
+            if (!updated)
+            {
+                errorMessage =
+                    "The order could not be found.";
+                return;
+            }
+
+            var order =
+                orders.FirstOrDefault(
+                    item => item.Id == orderId);
+
+            if (order != null)
+            {
+                order.Status = status;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to update order status: {ex.Message}";
+        }
+    }
+}

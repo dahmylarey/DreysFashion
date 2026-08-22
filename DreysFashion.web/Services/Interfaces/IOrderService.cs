@@ -115,5 +115,34 @@ namespace DreysFashion.web.Services.Interfaces
         /// </returns>
         Task<List<Order>> GetOrdersByCustomerEmailAsync(
             string email);
+
+        /// <summary>
+        /// Retrieves all orders in the system.
+        /// </summary>
+        /// <returns>
+        /// A list of all orders, newest first.
+        /// </returns>
+        Task<List<Order>> GetAllOrdersAsync();
+
+        /// <summary>
+        /// Updates the status of an order.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        /// <param name="status">
+        /// The new order status.
+        /// </param>
+        /// <returns>
+        /// True if the order was updated; otherwise, false.
+        /// </returns>
+        Task<bool> UpdateOrderStatusAsync(
+            int orderId,
+            string status);
+
+
     }
 }
+
+
+  

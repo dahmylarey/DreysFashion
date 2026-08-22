@@ -284,5 +284,44 @@ namespace DreysFashion.web.Services
                 .OrderByDescending(order => order.CreatedAt)
                 .ToListAsync();
         }
+
+        // Get all orders for admin
+        /// <summary>
+        /// Retrieves all orders in the system.
+        /// </summary>
+        public async Task<List<Order>> GetAllOrdersAsync()
+        {
+            return await _context.Orders
+                .Include(order => order.OrderItems)
+                .ThenInclude(item => item.Product)
+                .OrderByDescending(order => order.CreatedAt)
+                .ToListAsync();
+        }
+
+
+        // Update order status
+        /// <summary>
+        /// Updates the status of an existing order.
+        /// </summary>
+        public async Task<bool> UpdateOrderStatusAsync(
+            int orderId,
+            string status)
+        {
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(order => order.Id == orderId);
+
+            if (order == null)
+            {
+                return false;
+            }
+
+            order.Status = status;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+
     }
 }

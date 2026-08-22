@@ -2,106 +2,624 @@
 @rendermode InteractiveServer
 
 @using Microsoft.AspNetCore.Authorization
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.Models
 
 @attribute [Authorize(Roles = "Admin")]
+
+@inject IProductService ProductService
+@inject IOrderService OrderService
 
 <PageTitle>Admin Dashboard | Drey's Fashion</PageTitle>
 
 <div class="page-container">
 
-    <div class="page-header">
+    <!-- =========================
+         DASHBOARD HEADER
+         ========================= -->
 
-        <p class="eyebrow">
-            DREY'S FASHION
-        </p>
+    <div class="page-header d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
 
-        <h1>
-            Admin Dashboard
-        </h1>
+        <div>
 
-        <p>
-            Manage your fashion store.
-        </p>
+            <p class="eyebrow text-muted">
+                DREY'S FASHION
+            </p>
 
-    </div>
+            <h1 class="h3 mb-1">
+                Admin Dashboard
+            </h1>
 
-    <div class="admin-dashboard">
-
-        <div class="admin-card">
-
-            <div class="admin-card-icon">
-                🛍
-            </div>
-
-            <div>
-
-                <h2>
-                    Products
-                </h2>
-
-                <p>
-                    Add, edit, remove and manage your products.
-                </p>
-
-                <a href="/admin/products"
-                   class="add-cart">
-                    Manage Products
-                </a>
-
-            </div><br />
+            <p class="text-muted mb-0">
+                Manage your fashion store.
+            </p>
 
         </div>
 
-        <div class="admin-card">
+        <div class="admin-toolbar d-flex gap-2 flex-wrap">
 
-            <div class="admin-card-icon">
-                📦
+            <a href="/admin/products"
+               class="btn btn-primary btn-sm">
+
+                <i class="fas fa-box-open me-2"></i>
+                Manage Products
+
+            </a>
+
+            <a href="/admin/orders"
+               class="btn btn-outline-secondary btn-sm">
+
+                <i class="fas fa-receipt me-2"></i>
+                Manage Orders
+
+            </a>
+
+            <a href="/admin/customers"
+               class="btn btn-outline-secondary btn-sm">
+
+                <i class="fas fa-users me-2"></i>
+                View Customers
+
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         MAIN ADMIN MENU
+         ========================= -->
+
+    <div class="admin-dashboard mt-4">
+
+        <div class="row g-3">
+
+
+            <!-- PRODUCTS -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="card h-100">
+
+                    <div class="card-body d-flex gap-3 align-items-start">
+
+                        <div class="display-6 text-primary">
+
+                            <i class="fas fa-box-open"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h5 class="card-title mb-1">
+                                Products
+                            </h5>
+
+                            <p class="card-text text-muted small">
+                                Add, edit and manage your products.
+                            </p>
+
+                            <a href="/admin/products"
+                               class="stretched-link">
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
-            <div>
 
-                <h2>
-                    Orders
+            <!-- ORDERS -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="card h-100">
+
+                    <div class="card-body d-flex gap-3 align-items-start">
+
+                        <div class="display-6 text-success">
+
+                            <i class="fas fa-receipt"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h5 class="card-title mb-1">
+                                Orders
+                            </h5>
+
+                            <p class="card-text text-muted small">
+                                View and manage customer orders.
+                            </p>
+
+                            <a href="/admin/orders"
+                               class="stretched-link">
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CUSTOMERS -->
+
+            <div class="col-12 col-md-4">
+
+                <div class="card h-100">
+
+                    <div class="card-body d-flex gap-3 align-items-start">
+
+                        <div class="display-6 text-warning">
+
+                            <i class="fas fa-users"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h5 class="card-title mb-1">
+                                Customers
+                            </h5>
+
+                            <p class="card-text text-muted small">
+                                View registered customers.
+                            </p>
+
+                            <a href="/admin/customers"
+                               class="stretched-link">
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =========================
+         STATISTICS
+         ========================= -->
+    @if (loading)
+    {
+        <div class="mt-4">
+
+            <div class="alert alert-light">
+                Loading store statistics...
+            </div>
+
+        </div>
+    }
+    else
+    {
+
+        <div class="row g-3 mt-4">
+
+
+            <!-- TOTAL PRODUCTS -->
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-primary fs-2">
+
+                            <i class="fas fa-box-open"></i>
+
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Total Products
+                        </p>
+
+                        <h2>
+                            @totalProducts
+                        </h2>
+
+                        <a href="/admin/products"
+                           class="small text-decoration-none">
+
+                            Manage Products →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TOTAL ORDERS -->
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-success fs-2">
+
+                            <i class="fas fa-receipt"></i>
+
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Total Orders
+                        </p>
+
+                        <h2>
+                            @totalOrders
+                        </h2>
+
+                        <a href="/admin/orders"
+                           class="small text-decoration-none">
+
+                            Manage Orders →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PAID ORDERS -->
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-success fs-2">
+
+                            <i class="fas fa-check-circle"></i>
+
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Paid Orders
+                        </p>
+
+                        <h2>
+                            @paidOrders
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENDING ORDERS -->
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-warning fs-2">
+
+                            <i class="fas fa-clock"></i>
+
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Pending Orders
+                        </p>
+
+                        <h2>
+                            @pendingOrders
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             REVENUE + RECENT ORDERS
+             ========================= -->
+
+        <div class="row g-3 mt-1">
+
+
+            <!-- REVENUE -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="card">
+
+                    <div class="card-body">
+
+                        <p class="text-muted mb-1">
+                            Total Revenue
+                        </p>
+
+                        <h2>
+                            ₦@totalRevenue.ToString("N0")
+                        </h2>
+
+                        <small class="text-muted">
+                            From paid orders
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- RECENT ORDERS COUNT -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="card">
+
+                    <div class="card-body">
+
+                        <p class="text-muted mb-1">
+                            Recent Orders
+                        </p>
+
+                        <h2>
+                            @recentOrders.Count
+                        </h2>
+
+                        <a href="/admin/orders"
+                           class="small text-decoration-none">
+
+                            View Orders →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- =========================
+             RECENT ORDERS
+             ========================= -->
+
+        <div class="mt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h2 class="h4 mb-0">
+                    Recent Orders
                 </h2>
-
-                <p>
-                    View and manage customer orders.
-                </p>
 
                 <a href="/admin/orders"
-                   class="add-cart">
-                    Manage Orders
+                   class="text-decoration-none">
+
+                    View All →
+
                 </a>
 
             </div>
 
-        </div><br />
 
-        <div class="admin-card">
+            @if (!recentOrders.Any())
+            {
+                <div class="alert alert-light">
 
-            <div class="admin-card-icon">
-                👥
-            </div>
+                    No orders yet.
 
-            <div>
+                </div>
+            }
+            else
+            {
 
-                <h2>
-                    Customers
-                </h2>
+                <div class="table-responsive">
 
-                <p>
-                    View registered customers.
-                </p>
+                    <table class="table align-middle">
 
-                <a href="/admin/customers"
-                   class="add-cart">
-                    View Customers
-                </a>
+                        <thead>
 
-            </div><br />
+                            <tr>
+
+                                <th>
+                                    Order
+                                </th>
+
+                                <th>
+                                    Customer
+                                </th>
+
+                                <th>
+                                    Amount
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var order in recentOrders)
+                            {
+
+                                <tr>
+
+                                    <td>
+                                        #@order.Id
+                                    </td>
+
+                                    <td>
+                                        @order.CustomerName
+                                    </td>
+
+                                    <td>
+                                        ₦@order.TotalAmount.ToString("N0")
+                                    </td>
+
+                                    <td>
+
+                                        @if (order.Status == "Paid")
+                                        {
+                                            <span class="badge bg-success">
+                                                Paid
+                                            </span>
+                                        }
+                                        else if (order.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                Pending
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                @order.Status
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
 
         </div>
 
-    </div>
+    }
 
 </div>
+
+
+@code {
+
+    // =========================
+    // Dashboard state
+    // =========================
+
+    private bool loading = true;
+
+    private int totalProducts;
+
+    private int totalOrders;
+
+    private int paidOrders;
+
+    private int pendingOrders;
+
+    private decimal totalRevenue;
+
+    private List<Order> recentOrders = new();
+
+
+    // =========================
+    // Load dashboard
+    // =========================
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get products
+
+            var products =
+                await ProductService.GetAllProductsAsync();
+
+            totalProducts =
+                products.Count;
+
+
+            // Get orders
+
+            var orders =
+                await OrderService.GetAllOrdersAsync();
+
+            totalOrders =
+                orders.Count;
+
+
+            // Count paid orders
+
+            paidOrders =
+                orders.Count(order =>
+                    order.Status == "Paid" ||
+                    order.Status == "Processing" ||
+                    order.Status == "Shipped" ||
+                    order.Status == "Delivered");
+
+
+            // Count pending orders
+
+            pendingOrders =
+                orders.Count(order =>
+                    order.Status == "Pending");
+
+
+            // Calculate revenue
+
+            totalRevenue =
+                orders
+                    .Where(order =>
+                        order.Status == "Paid" ||
+                        order.Status == "Processing" ||
+                        order.Status == "Shipped" ||
+                        order.Status == "Delivered")
+                    .Sum(order =>
+                        order.TotalAmount);
+
+
+            // Get five most recent orders
+
+            recentOrders =
+                orders
+                    .OrderByDescending(order =>
+                        order.CreatedAt)
+                    .Take(5)
+                    .ToList();
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

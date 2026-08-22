@@ -1,0 +1,266 @@
+﻿@page "/admin/products/add"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.ViewModels
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IProductService ProductService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Add Product | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Add Product
+        </h1>
+
+        <p>
+            Add a new product to your fashion store.
+        </p>
+
+    </div>
+
+    <div class="checkout-container">
+
+        <div class="checkout-form">
+
+            <EditForm Model="product"
+                      OnValidSubmit="SaveProduct">
+
+                <DataAnnotationsValidator />
+
+                <ValidationSummary />
+
+                <!-- Product Name -->
+                <div class="form-group">
+
+                    <label for="name">
+                        Product Name
+                    </label>
+
+                    <InputText id="name"
+                               class="form-control"
+                               @bind-Value="product.Name" />
+
+                    <ValidationMessage For="@(() => product.Name)" />
+
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+
+                    <label for="description">
+                        Description
+                    </label>
+
+                    <InputTextArea id="description"
+                                   class="form-control"
+                                   rows="5"
+                                   @bind-Value="product.Description" />
+
+                    <ValidationMessage For="@(() => product.Description)" />
+
+                </div>
+
+                <!-- Price -->
+                <div class="form-group">
+
+                    <label for="price">
+                        Price (₦)
+                    </label>
+
+                    <InputNumber id="price"
+                                 class="form-control"
+                                 @bind-Value="product.Price" />
+
+                    <ValidationMessage For="@(() => product.Price)" />
+
+                </div>
+
+                <!-- Stock -->
+                <div class="form-group">
+
+                    <label for="stock">
+                        Stock Quantity
+                    </label>
+
+                    <InputNumber id="stock"
+                                 class="form-control"
+                                 @bind-Value="product.StockQuantity" />
+
+                    <ValidationMessage For="@(() => product.StockQuantity)" />
+
+                </div>
+
+                <!-- Image URL -->
+                <div class="form-group">
+
+                    <label for="imageUrl">
+                        Product Image URL
+                    </label>
+
+                    <InputText id="imageUrl"
+                               class="form-control"
+                               @bind-Value="product.ImageUrl" />
+
+                    <small class="form-text text-muted">
+                        Enter the URL of the product image.
+                    </small>
+
+                </div>
+
+                <!-- Availability -->
+                <div class="form-group">
+
+                    <div class="form-check">
+
+                        <InputCheckbox id="available"
+                                       class="form-check-input"
+                                       @bind-Value="product.IsAvailable" />
+
+                        <label class="form-check-label"
+                               for="available">
+                            Product is available for purchase
+                        </label>
+
+                    </div>
+
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        @errorMessage
+                    </div>
+                }
+
+                <div class="admin-actions">
+
+                    <button type="submit"
+                            class="add-cart"
+                            disabled="@isSaving">
+
+                        @if (isSaving)
+                        {
+                            <span>
+                                Saving Product...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Save Product
+                            </span>
+                        }
+
+                    </button>
+
+                    <a href="/admin/products"
+                       class="secondary-button">
+                        Cancel
+                    </a>
+
+                </div>
+
+            </EditForm>
+
+        </div>
+
+        <!-- Preview -->
+        <aside class="checkout-summary">
+
+            <h2>
+                Product Preview
+            </h2>
+
+            @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+            {
+                <img src="@product.ImageUrl"
+                     alt="@product.Name"
+                     style="width:100%; max-height:300px; object-fit:cover; border-radius:10px;" />
+            }
+            else
+            {
+                <div class="text-muted">
+                    Product image preview will appear here.
+                </div>
+            }
+
+            <hr />
+
+            <h3>
+                @(string.IsNullOrWhiteSpace(product.Name)
+                    ? "Product Name"
+                    : product.Name)
+            </h3>
+
+            <p>
+                @(string.IsNullOrWhiteSpace(product.Description)
+                    ? "Product description"
+                    : product.Description)
+            </p>
+
+            <strong>
+                ₦@product.Price.ToString("N0")
+            </strong>
+
+            <p>
+                Stock: @product.StockQuantity
+            </p>
+
+        </aside>
+
+    </div>
+
+</div>
+
+@code {
+
+    private ProductViewModel product = new()
+    {
+        IsAvailable = true
+    };
+
+    private bool isSaving;
+
+    private string? errorMessage;
+
+    private async Task SaveProduct()
+    {
+        if (isSaving)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            await ProductService.CreateProductAsync(product);
+
+            NavigationManager.NavigateTo(
+                "/admin/products",
+                forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to save product: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

@@ -1,0 +1,316 @@
+﻿@page "/admin/products/edit/{id:int}"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.ViewModels
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IProductService ProductService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Product | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Edit Product
+        </h1>
+
+        <p>
+            Update your product information.
+        </p>
+
+    </div>
+
+    @if (loading)
+    {
+        <div class="page-header">
+            <p>Loading product...</p>
+        </div>
+    }
+    else if (product == null)
+    {
+        <div class="page-header">
+
+            <h2>
+                Product Not Found
+            </h2>
+
+            <p>
+                The product you're looking for does not exist.
+            </p>
+
+            <a href="/admin/products"
+               class="add-cart">
+                Back to Products
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="checkout-container">
+
+            <div class="checkout-form">
+
+                <EditForm Model="product"
+                          OnValidSubmit="UpdateProduct">
+
+                    <DataAnnotationsValidator />
+
+                    <ValidationSummary />
+
+                    <!-- Product Name -->
+                    <div class="form-group">
+
+                        <label for="name">
+                            Product Name
+                        </label>
+
+                        <InputText id="name"
+                                   class="form-control"
+                                   @bind-Value="product.Name" />
+
+                        <ValidationMessage For="@(() => product.Name)" />
+
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-group">
+
+                        <label for="description">
+                            Description
+                        </label>
+
+                        <InputTextArea id="description"
+                                       class="form-control"
+                                       rows="5"
+                                       @bind-Value="product.Description" />
+
+                        <ValidationMessage For="@(() => product.Description)" />
+
+                    </div>
+
+                    <!-- Price -->
+                    <div class="form-group">
+
+                        <label for="price">
+                            Price (₦)
+                        </label>
+
+                        <InputNumber id="price"
+                                     class="form-control"
+                                     @bind-Value="product.Price" />
+
+                        <ValidationMessage For="@(() => product.Price)" />
+
+                    </div>
+
+                    <!-- Stock -->
+                    <div class="form-group">
+
+                        <label for="stock">
+                            Stock Quantity
+                        </label>
+
+                        <InputNumber id="stock"
+                                     class="form-control"
+                                     @bind-Value="product.StockQuantity" />
+
+                        <ValidationMessage For="@(() => product.StockQuantity)" />
+
+                    </div>
+
+                    <!-- Image URL -->
+                    <div class="form-group">
+
+                        <label for="imageUrl">
+                            Product Image URL
+                        </label>
+
+                        <InputText id="imageUrl"
+                                   class="form-control"
+                                   @bind-Value="product.ImageUrl" />
+
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="form-group">
+
+                        <div class="form-check">
+
+                            <InputCheckbox id="available"
+                                           class="form-check-input"
+                                           @bind-Value="product.IsAvailable" />
+
+                            <label class="form-check-label"
+                                   for="available">
+                                Product is available for purchase
+                            </label>
+
+                        </div>
+
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <div class="admin-actions">
+
+                        <button type="submit"
+                                class="add-cart"
+                                disabled="@isSaving">
+
+                            @if (isSaving)
+                            {
+                                <span>
+                                    Updating Product...
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    Save Changes
+                                </span>
+                            }
+
+                        </button>
+
+                        <a href="/admin/products"
+                           class="secondary-button">
+                            Cancel
+                        </a>
+
+                    </div>
+
+                </EditForm>
+
+            </div>
+
+            <!-- Preview -->
+            <aside class="checkout-summary">
+
+                <h2>
+                    Product Preview
+                </h2>
+
+                @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                {
+                    <img src="@product.ImageUrl"
+                         alt="@product.Name"
+                         style="width:100%; max-height:300px; object-fit:cover; border-radius:10px;" />
+                }
+                else
+                {
+                    <div class="text-muted">
+                        No product image.
+                    </div>
+                }
+
+                <hr />
+
+                <h3>
+                    @product.Name
+                </h3>
+
+                <p>
+                    @product.Description
+                </p>
+
+                <strong>
+                    ₦@product.Price.ToString("N0")
+                </strong>
+
+                <p>
+                    Stock: @product.StockQuantity
+                </p>
+
+                @if (product.IsAvailable)
+                {
+                    <span class="status-badge available">
+                        Available
+                    </span>
+                }
+                else
+                {
+                    <span class="status-badge unavailable">
+                        Unavailable
+                    </span>
+                }
+
+            </aside>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    [Parameter]
+    public int id { get; set; }
+
+    private ProductViewModel? product;
+
+    private bool loading = true;
+
+    private bool isSaving;
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        product = await ProductService.GetProductByIdAsync(id);
+
+        loading = false;
+    }
+
+    private async Task UpdateProduct()
+    {
+        if (product == null || isSaving)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            var updated =
+                await ProductService.UpdateProductAsync(product);
+
+            if (!updated)
+            {
+                errorMessage =
+                    "The product could not be found.";
+                return;
+            }
+
+            NavigationManager.NavigateTo(
+                "/admin/products",
+                forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to update product: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

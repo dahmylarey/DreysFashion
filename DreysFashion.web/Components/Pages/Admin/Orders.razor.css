@@ -1,0 +1,18 @@
+.admin-product-table { 
+    margin-top: 1rem;
+}
+
+.admin-product-table .form-select-sm {
+    min-width: 160px;
+}
+
+.page-header .eyebrow {
+    letter-spacing: .12rem;
+    font-weight: 700;
+}
+
+@media (max-width: 767.98px) {
+    .admin-toolbar {
+        justify-content: flex-start;
+    }
+}
