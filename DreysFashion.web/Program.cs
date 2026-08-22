@@ -4,6 +4,7 @@ using DreysFashion.web.Models;
 using DreysFashion.web.Services;
 using DreysFashion.web.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +15,21 @@ builder.Services.AddRazorComponents()
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Register ASP.NET Core Identity.
+builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
+{
+    // Require unique email addresses for customer accounts.
+    options.User.RequireUniqueEmail = true;
+
+    // Configure password requirements.
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
+})
+.AddEntityFrameworkStores<ApplicationDbContext>();
 
 // Register application services for dependency injection
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -38,6 +54,9 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 

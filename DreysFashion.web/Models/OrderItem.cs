@@ -44,5 +44,7 @@
         /// Gets the total price for this order item.
         /// </summary>
         public decimal TotalPrice => UnitPrice * Quantity;
+
+
     }
 }

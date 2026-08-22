@@ -1,0 +1,202 @@
+﻿@page "/my-orders"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+
+@inject IOrderService OrderService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>My Orders | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            My Orders
+        </h1>
+
+        <p>
+            View your previous orders and payment status.
+        </p>
+
+    </div>
+
+    @if (loading)
+    {
+        <div class="page-header">
+            <p>Loading your orders...</p>
+        </div>
+    }
+    else if (!isAuthenticated)
+    {
+        <div class="page-header">
+
+            <h2>
+                Please Sign In
+            </h2>
+
+            <p>
+                You need to sign in to view your orders.
+            </p>
+
+            <a href="/Account/Login" class="add-cart">
+                Sign In
+            </a>
+
+        </div>
+    }
+    else if (!orders.Any())
+    {
+        <div class="page-header">
+
+            <h2>
+                No Orders Yet
+            </h2>
+
+            <p>
+                You haven't placed any orders yet.
+            </p>
+
+            <a href="/shop" class="add-cart">
+                Start Shopping
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="orders-list">
+
+            @foreach (var order in orders)
+            {
+                <article class="order-card">
+
+                    <div class="order-card-header">
+
+                        <div>
+                            <span>
+                                Order
+                            </span>
+
+                            <strong>
+                                #@order.Id
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>
+                                Date
+                            </span>
+
+                            <strong>
+                                @order.CreatedAt
+                                .ToLocalTime()
+                                .ToString("dd MMM yyyy")
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div class="order-card-body">
+
+                        <div>
+                            <span>
+                                Status
+                            </span>
+
+                            <strong>
+                                @order.Status
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>
+                                Total
+                            </span>
+
+                            <strong>
+                                ₦@order.TotalAmount.ToString("N0")
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <div class="order-card-footer">
+
+                        <a href="/order-confirmation/@order.Id"
+                           class="add-cart">
+                            View Order
+                        </a>
+
+                    </div><br />
+
+                </article>
+            }
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the orders belonging to the authenticated customer.
+    /// </summary>
+    private List<Order> orders = new();
+
+    /// <summary>
+    /// Indicates whether the order information is loading.
+    /// </summary>
+    private bool loading = true;
+
+    /// <summary>
+    /// Indicates whether the current customer is authenticated.
+    /// </summary>
+    private bool isAuthenticated;
+
+    /// <summary>
+    /// Loads the authenticated customer's orders.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        var authenticationState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user =
+            authenticationState.User;
+
+        isAuthenticated =
+            user.Identity?.IsAuthenticated ?? false;
+
+        if (!isAuthenticated)
+        {
+            loading = false;
+            return;
+        }
+
+        var email =
+            user.Identity?.Name;
+
+        if (string.IsNullOrWhiteSpace(email))
+        {
+            loading = false;
+            return;
+        }
+
+        orders =
+            await OrderService
+                .GetOrdersByCustomerEmailAsync(email);
+
+        loading = false;
+    }
+}

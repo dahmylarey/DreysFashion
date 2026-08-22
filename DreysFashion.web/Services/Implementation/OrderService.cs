@@ -24,6 +24,8 @@ namespace DreysFashion.web.Services
             _context = context;
         }
 
+
+        //Create order from checkout and cart items
         /// <summary>
         /// Creates a new order from the customer's checkout information
         /// and the current shopping cart.
@@ -92,6 +94,8 @@ namespace DreysFashion.web.Services
             return order.Id;
         }
 
+
+        //Get order by ID
         /// <summary>
         /// Retrieves an order together with its order items and products.
         /// </summary>
@@ -109,6 +113,8 @@ namespace DreysFashion.web.Services
                 .FirstOrDefaultAsync(order => order.Id == orderId);
         }
 
+
+        //Set payment reference for an order
         /// <summary>
         /// Associates a Paystack payment reference with an existing order.
         /// </summary>
@@ -145,6 +151,8 @@ namespace DreysFashion.web.Services
             await _context.SaveChangesAsync();
         }
 
+
+        //mark order as paid
         /// <summary>
         /// Marks an order as paid.
         /// </summary>
@@ -167,6 +175,8 @@ namespace DreysFashion.web.Services
             await _context.SaveChangesAsync();
         }
 
+
+        //mark order as shipped
         //// <summary>
         /// Retrieves an order using its Paystack payment reference.
         /// </summary>
@@ -184,6 +194,25 @@ namespace DreysFashion.web.Services
                 .ThenInclude(item => item.Product)
                 .FirstOrDefaultAsync(
                     order => order.PaymentReference == paymentReference);
+        }
+
+        //Get all orders by customer email
+        /// <summary>
+        /// Retrieves all orders associated with a customer's email address.
+        /// </summary>
+        /// <param name="email">
+        /// The customer's email address.
+        /// </param>
+        /// <returns>
+        /// A list of the customer's orders, newest first.
+        /// </returns>
+        public async Task<List<Order>> GetOrdersByCustomerEmailAsync(
+            string email)
+        {
+            return await _context.Orders
+                .Where(order => order.CustomerEmail == email)
+                .OrderByDescending(order => order.CreatedAt)
+                .ToListAsync();
         }
     }
 }

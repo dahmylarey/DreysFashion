@@ -70,6 +70,17 @@ namespace DreysFashion.web.Services.Interfaces
         /// </param>
         Task MarkOrderAsPaidAsync(int orderId);
 
+        /// <summary>
+        /// Retrieves all orders associated with a customer's email address.
+        /// </summary>
+        /// <param name="email">
+        /// The customer's email address.
+        /// </param>
+        /// <returns>
+        /// A collection of the customer's orders.
+        /// </returns>
+        Task<List<Order>> GetOrdersByCustomerEmailAsync(string email);
+
 
     }
 }

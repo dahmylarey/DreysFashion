@@ -195,14 +195,15 @@
                 return;
             }
 
-            // Everything checks out.
-            await OrderService.MarkOrderAsPaidAsync(order.Id);
-
             orderId = order.Id;
             paymentSuccessful = true;
 
             // Clear the cart only after successful payment.
             CartService.ClearCart();
+
+            // Redirect to the existing order confirmation page.
+            NavigationManager.NavigateTo(
+                $"/order-confirmation/{order.Id}");
         }
         catch (Exception ex)
         {

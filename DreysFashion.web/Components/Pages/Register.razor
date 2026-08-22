@@ -1,0 +1,259 @@
+﻿@page "/register"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using DreysFashion.web.Models
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Account | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Create Your Account
+        </h1>
+
+        <p>
+            Create an account to manage your orders and checkout faster.
+        </p>
+
+    </div>
+
+    <div class="auth-container">
+
+        <EditForm Model="model"
+                  OnValidSubmit="HandleRegister">
+
+            <DataAnnotationsValidator />
+
+            <ValidationSummary />
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    @errorMessage
+                </div>
+            }
+
+            <div class="form-group">
+
+                <label>
+                    Full Name
+                </label>
+
+                <InputText @bind-Value="model.FullName"
+                           class="form-control"
+                           placeholder="Enter your full name" />
+
+                <ValidationMessage For="@(() => model.FullName)" />
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Email Address
+                </label>
+
+                <InputText @bind-Value="model.Email"
+                           type="email"
+                           class="form-control"
+                           placeholder="Enter your email" />
+
+                <ValidationMessage For="@(() => model.Email)" />
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Password
+                </label>
+
+                <InputText @bind-Value="model.Password"
+                           type="password"
+                           class="form-control"
+                           placeholder="Create a password" />
+
+                <ValidationMessage For="@(() => model.Password)" />
+
+            </div>
+
+            <div class="form-group">
+
+                <label>
+                    Confirm Password
+                </label>
+
+                <InputText @bind-Value="model.ConfirmPassword"
+                           type="password"
+                           class="form-control"
+                           placeholder="Confirm your password" />
+
+                <ValidationMessage For="@(() => model.ConfirmPassword)" />
+
+            </div>
+
+            <button type="submit"
+                    class="add-cart"
+                    disabled="@registering">
+
+                @if (registering)
+                {
+                    <span>Creating Account...</span>
+                }
+                else
+                {
+                    <span>Create Account</span>
+                }
+
+            </button>
+
+        </EditForm>
+
+        <div class="auth-footer">
+
+            <p>
+                Already have an account?
+                <a href="/login">
+                    Sign in
+                </a>
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the registration form information.
+    /// </summary>
+    private RegisterModel model = new();
+
+    /// <summary>
+    /// Indicates whether registration is currently being processed.
+    /// </summary>
+    private bool registering;
+
+    /// <summary>
+    /// Stores an error message when registration fails.
+    /// </summary>
+    private string? errorMessage;
+
+    /// <summary>
+    /// Creates a new customer account.
+    /// </summary>
+    private async Task HandleRegister()
+    {
+        registering = true;
+        errorMessage = null;
+
+        try
+        {
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.FullName,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var result = await UserManager.CreateAsync(
+                user,
+                model.Password);
+
+            if (result.Succeeded)
+            {
+                // Do NOT sign the user in here.
+                // The authentication cookie must be created
+                // during a normal HTTP request.
+
+                NavigationManager.NavigateTo(
+                    "/login?registered=true",
+                    forceLoad: true);
+
+                return;
+            }
+
+            errorMessage = string.Join(
+                " ",
+                result.Errors.Select(
+                    error => error.Description));
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to create your account: {ex.Message}";
+        }
+        finally
+        {
+            registering = false;
+        }
+    }
+
+    /// <summary>
+    /// Represents the customer registration form.
+    /// </summary>
+    private sealed class RegisterModel
+    {
+        /// <summary>
+        /// Gets or sets the customer's full name.
+        /// </summary>
+        [Required(
+            ErrorMessage = "Please enter your full name.")]
+        [StringLength(
+            100,
+            MinimumLength = 2,
+            ErrorMessage =
+                "Full name must be between 2 and 100 characters.")]
+        public string FullName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the customer's email address.
+        /// </summary>
+        [Required(
+            ErrorMessage =
+                "Please enter your email address.")]
+        [EmailAddress(
+            ErrorMessage =
+                "Please enter a valid email address.")]
+        public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the customer's password.
+        /// </summary>
+        [Required(
+            ErrorMessage =
+                "Please enter a password.")]
+        [StringLength(
+            100,
+            MinimumLength = 6,
+            ErrorMessage =
+                "Password must be at least 6 characters.")]
+        public string Password { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the password confirmation.
+        /// </summary>
+        [Required(
+            ErrorMessage =
+                "Please confirm your password.")]
+        [Compare(
+            nameof(Password),
+            ErrorMessage =
+                "The passwords do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+    }
+}
