@@ -5,6 +5,7 @@
 @using DreysFashion.web.Services.Interfaces
 
 @inject ICartService CartService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Shopping Cart | Drey's Fashion</PageTitle>
 
@@ -256,11 +257,10 @@
     }
 
     /// <summary>
-    /// Handles the checkout button.
-    /// Checkout functionality will be implemented later.
+    /// Navigates the customer to the checkout page.
     /// </summary>
     private void ProceedToCheckout()
     {
-        // Checkout functionality will be implemented next.
+        NavigationManager.NavigateTo("/checkout");
     }
 }

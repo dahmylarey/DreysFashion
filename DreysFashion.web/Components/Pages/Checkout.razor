@@ -1,0 +1,285 @@
+﻿@page "/checkout"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.ViewModels
+
+@inject ICartService CartService
+@inject IOrderService OrderService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Checkout | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Checkout
+        </h1>
+
+        <p>
+            Enter your details to complete your order.
+        </p>
+    </div>
+
+    @if (!cartItems.Any())
+    {
+        <div class="empty-cart">
+
+            <h2>
+                Your cart is empty
+            </h2>
+
+            <p>
+                Add some products before proceeding to checkout.
+            </p>
+
+            <a href="/shop" class="add-cart">
+                Continue Shopping
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="checkout-container">
+
+            <!-- Checkout Form -->
+            <div class="checkout-form">
+
+                <h2>
+                    Customer Information
+                </h2>
+
+                <EditForm Model="checkout"
+                          OnValidSubmit="PlaceOrder">
+
+                    <DataAnnotationsValidator />
+
+                    <ValidationSummary />
+
+                    <!-- Full Name -->
+                    <div class="form-group">
+
+                        <label for="customerName">
+                            Full Name
+                        </label>
+
+                        <InputText id="customerName"
+                                   class="form-control"
+                                   @bind-Value="checkout.CustomerName" />
+
+                        <ValidationMessage For="@(() => checkout.CustomerName)" />
+
+                    </div>
+
+                    <!-- Email -->
+                    <div class="form-group">
+
+                        <label for="customerEmail">
+                            Email Address
+                        </label>
+
+                        <InputText id="customerEmail"
+                                   type="email"
+                                   class="form-control"
+                                   @bind-Value="checkout.CustomerEmail" />
+
+                        <ValidationMessage For="@(() => checkout.CustomerEmail)" />
+
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="form-group">
+
+                        <label for="customerPhone">
+                            Phone Number
+                        </label>
+
+                        <InputText id="customerPhone"
+                                   class="form-control"
+                                   @bind-Value="checkout.CustomerPhone" />
+
+                        <ValidationMessage For="@(() => checkout.CustomerPhone)" />
+
+                    </div>
+
+                    <!-- Delivery Address -->
+                    <div class="form-group">
+
+                        <label for="deliveryAddress">
+                            Delivery Address
+                        </label>
+
+                        <InputTextArea id="deliveryAddress"
+                                       class="form-control"
+                                       rows="4"
+                                       @bind-Value="checkout.DeliveryAddress" />
+
+                        <ValidationMessage For="@(() => checkout.DeliveryAddress)" />
+
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
+                    <button type="submit"
+                            class="checkout-button"
+                            disabled="@isSubmitting">
+
+                        @if (isSubmitting)
+                        {
+                            <span>
+                                Creating Order...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Place Order
+                            </span>
+                        }
+
+                    </button>
+
+                </EditForm>
+
+            </div>
+
+            <!-- Order Summary -->
+            <aside class="checkout-summary">
+
+                <h2>
+                    Order Summary
+                </h2>
+
+                @foreach (var item in cartItems)
+                {
+                    <div class="checkout-item">
+
+                        <div>
+                            <strong>
+                                @item.ProductName
+                            </strong>
+
+                            <p>
+                                @item.Quantity ×
+                                ₦@item.UnitPrice.ToString("N0")
+                            </p>
+                        </div>
+
+                        <strong>
+                            ₦@item.TotalPrice.ToString("N0")
+                        </strong>
+
+                    </div>
+                }
+
+                <hr />
+
+                <div class="summary-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ₦@CartService.GetTotal().ToString("N0")
+                    </strong>
+
+                </div>
+
+            </aside>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the customer's checkout information.
+    /// </summary>
+    private CheckoutViewModel checkout = new();
+
+    /// <summary>
+    /// Stores the items currently in the shopping cart.
+    /// </summary>
+    private IReadOnlyList<CartItemViewModel> cartItems =
+        Array.Empty<CartItemViewModel>();
+
+    /// <summary>
+    /// Indicates whether the order is currently being submitted.
+    /// </summary>
+    private bool isSubmitting;
+
+    /// <summary>
+    /// Stores an error message when order creation fails.
+    /// </summary>
+    private string? errorMessage;
+
+    /// <summary>
+    /// Loads the current shopping cart when the checkout page initializes.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        LoadCart();
+    }
+
+    /// <summary>
+    /// Loads the items currently stored in the shopping cart.
+    /// </summary>
+    private void LoadCart()
+    {
+        cartItems = CartService.GetItems();
+    }
+
+    /// <summary>
+    /// Creates a new pending order using the customer's checkout information
+    /// and the items currently in the shopping cart.
+    /// </summary>
+    private async Task PlaceOrder()
+    {
+        if (isSubmitting)
+        {
+            return;
+        }
+
+        if (!cartItems.Any())
+        {
+            errorMessage = "Your cart is empty.";
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+            errorMessage = null;
+
+            var orderId = await OrderService.CreateOrderAsync(
+                checkout,
+                cartItems);
+
+            NavigationManager.NavigateTo(
+                $"/order-confirmation/{orderId}");
+        }
+        catch (Exception)
+        {
+            errorMessage =
+                "We could not create your order. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

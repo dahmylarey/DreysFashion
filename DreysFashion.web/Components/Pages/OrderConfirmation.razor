@@ -1,0 +1,198 @@
+﻿@page "/order-confirmation/{id:int}"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+
+@inject IOrderService OrderService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Order Confirmation | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    @if (loading)
+    {
+        <div class="page-header">
+            <p>Loading your order...</p>
+        </div>
+    }
+    else if (order == null)
+    {
+        <div class="page-header">
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                Order Not Found
+            </h1>
+
+            <p>
+                We couldn't find the order you're looking for.
+            </p>
+
+            <a href="/shop" class="add-cart">
+                Continue Shopping
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="order-confirmation">
+
+            <div class="confirmation-header">
+
+                <div class="confirmation-icon">
+                    ✓
+                </div>
+
+                <p class="eyebrow">
+                    DREY'S FASHION
+                </p>
+
+                <h1>
+                    Thank You For Your Order!
+                </h1>
+
+                <p>
+                    Your order has been received successfully.
+                </p>
+
+                <strong>
+                    Order #@order.Id
+                </strong>
+
+            </div>
+
+            <div class="order-summary">
+
+                <h2>
+                    Order Details
+                </h2>
+
+                <div class="order-customer-details">
+
+                    <p>
+                        <strong>Name:</strong>
+                        @order.CustomerName
+                    </p>
+
+                    <p>
+                        <strong>Email:</strong>
+                        @order.CustomerEmail
+                    </p>
+
+                    <p>
+                        <strong>Phone:</strong>
+                        @order.CustomerPhone
+                    </p>
+
+                    <p>
+                        <strong>Delivery Address:</strong>
+                        @order.DeliveryAddress
+                    </p>
+
+                </div>
+
+                <hr />
+
+                <h3>
+                    Items
+                </h3>
+
+                @foreach (var item in order.OrderItems)
+                {
+                    <div class="confirmation-item">
+
+                        <div>
+
+                            <strong>
+                                @item.Product.Name
+                            </strong>
+
+                            <p>
+                                @item.Quantity ×
+                                ₦@item.UnitPrice.ToString("N0")
+                            </p>
+
+                        </div>
+
+                        <strong>
+                            ₦@item.TotalPrice.ToString("N0")
+                        </strong>
+
+                    </div>
+                }
+
+                <hr />
+
+                <div class="summary-row">
+
+                    <span>
+                        Order Status
+                    </span>
+
+                    <strong>
+                        @order.Status
+                    </strong>
+
+                </div>
+
+                <div class="summary-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ₦@order.TotalAmount.ToString("N0")
+                    </strong>
+
+                </div>
+
+            </div>
+
+            <div class="confirmation-actions">
+
+                <a href="/shop" class="add-cart">
+                    Continue Shopping
+                </a>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Gets or sets the unique identifier of the order from the route.
+    /// </summary>
+    [Parameter]
+    public int id { get; set; }
+
+    /// <summary>
+    /// Stores the order being displayed.
+    /// </summary>
+    private Order? order;
+
+    /// <summary>
+    /// Indicates whether the order is currently being loaded.
+    /// </summary>
+    private bool loading = true;
+
+    /// <summary>
+    /// Loads the requested order when the confirmation page initializes.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        order = await OrderService.GetOrderByIdAsync(id);
+
+        loading = false;
+    }
+}
