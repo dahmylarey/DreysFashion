@@ -1,0 +1,88 @@
+﻿@page "/shop"
+
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.ViewModels
+
+@inject IProductService ProductService
+
+<PageTitle>Shop | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+        <p class="eyebrow">DREY'S FASHION</p>
+
+        <h1>Our Collection</h1>
+
+        <p>
+            Explore our collection of carefully crafted fashion pieces.
+        </p>
+    </div>
+
+    @if (products == null)
+    {
+        <p>Loading products...</p>
+    }
+    else if (!products.Any())
+    {
+        <p>No products available at the moment.</p>
+    }
+    else
+    {
+        <div class="product-grid">
+
+            @foreach (var product in products)
+            {
+                <article class="product-card">
+
+                    <a href="@($"/shop/{product.Id}")" class="product-card-link">
+
+                        <div class="product-image">
+                            <span>@product.Name</span>
+                        </div>
+
+                        <div class="product-info">
+
+                            <h3>@product.Name</h3>
+
+                            <p>
+                                @product.Description
+                            </p>
+
+                            <strong>
+                                ₦@product.Price.ToString("N0")
+                            </strong>
+
+                            <br />
+
+                            <small>
+                                @product.StockQuantity available
+                            </small>
+
+                        </div>
+
+                    </a>
+
+                    <button class="add-cart">
+                        Add to Cart
+                    </button>
+
+                </article>
+            }
+
+        </div>
+    }
+                
+</div>
+
+@code {
+    private List<ProductViewModel>? products;
+
+    /// <summary>
+    /// Loads the products when the Shop component is initialized.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        products = await ProductService.GetAllProductsAsync();
+    }
+}

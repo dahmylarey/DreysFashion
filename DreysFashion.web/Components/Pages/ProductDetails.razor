@@ -1,0 +1,100 @@
+﻿@page "/shop/{id:int}"
+
+@using DreysFashion.web.ViewModels
+@using DreysFashion.web.Services.Interfaces
+
+@inject IProductService ProductService
+
+<PageTitle>
+    @(product?.Name ?? "Product") | Drey's Fashion
+</PageTitle>
+
+<div class="page-container">
+
+    @if (loading)
+    {
+        <p>Loading product...</p>
+    }
+    else if (product == null)
+    {
+        <div class="product-not-found">
+            <h2>Product Not Found</h2>
+
+            <p>
+                Sorry, we couldn't find the product you're looking for.
+            </p>
+
+            <a href="/shop">Back to Shop</a>
+        </div>
+    }
+    else
+    {
+        <div class="product-details">
+
+            <div class="product-details-image">
+                @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                {
+                    <img src="@product.ImageUrl"
+                         alt="@product.Name" />
+                }
+                else
+                {
+                    <span>@product.Name</span>
+                }
+            </div>
+
+            <div class="product-details-info">
+
+                <p class="eyebrow">DREY'S FASHION</p>
+
+                <h1>@product.Name</h1>
+
+                <p>
+                    @product.Description
+                </p>
+
+                <h2>
+                    ₦@product.Price.ToString("N0")
+                </h2>
+
+                <p>
+                    @product.StockQuantity available
+                </p>
+
+                <button class="add-cart">
+                    Add to Cart
+                </button>
+
+                <br />
+
+                <a href="/shop">
+                    ← Back to Shop
+                </a>
+
+            </div>
+
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// Gets the unique identifier of the product from the route.
+    /// </summary>
+    [Parameter]
+    public int id { get; set; }
+
+    private ProductViewModel? product;
+
+    private bool loading = true;
+
+    /// <summary>
+    /// Loads the requested product when the component is initialized.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        product = await ProductService.GetProductByIdAsync(id);
+
+        loading = false;
+    }
+}
