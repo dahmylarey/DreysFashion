@@ -6,12 +6,22 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
+        <header class="site-header d-flex align-items-center justify-content-between px-4">
+            <div class="brand d-flex align-items-center gap-3">
+                <a class="navbar-brand text-white h5 mb-0" href="/">DreysFashion</a>
+                
+            </div>
 
-        <article class="content px-4">
-            @Body
+            <div class="header-actions d-flex align-items-center gap-3">
+                <input class="form-control form-control-sm search-input" placeholder="Search products..." />
+                <a class="btn btn-outline-light btn-sm" href="/cart"><i class="fas fa-shopping-cart"></i></a>
+            </div>
+        </header>
+
+        <article class="content-container px-4 py-4">
+            <div class="container-lg">
+                @Body
+            </div>
         </article>
     </main>
 </div>

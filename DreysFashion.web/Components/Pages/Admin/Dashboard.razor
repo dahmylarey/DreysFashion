@@ -1,0 +1,107 @@
+﻿@page "/admin"
+@rendermode InteractiveServer
+
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Admin Dashboard | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Admin Dashboard
+        </h1>
+
+        <p>
+            Manage your fashion store.
+        </p>
+
+    </div>
+
+    <div class="admin-dashboard">
+
+        <div class="admin-card">
+
+            <div class="admin-card-icon">
+                🛍
+            </div>
+
+            <div>
+
+                <h2>
+                    Products
+                </h2>
+
+                <p>
+                    Add, edit, remove and manage your products.
+                </p>
+
+                <a href="/admin/products"
+                   class="add-cart">
+                    Manage Products
+                </a>
+
+            </div><br />
+
+        </div>
+
+        <div class="admin-card">
+
+            <div class="admin-card-icon">
+                📦
+            </div>
+
+            <div>
+
+                <h2>
+                    Orders
+                </h2>
+
+                <p>
+                    View and manage customer orders.
+                </p>
+
+                <a href="/admin/orders"
+                   class="add-cart">
+                    Manage Orders
+                </a>
+
+            </div>
+
+        </div><br />
+
+        <div class="admin-card">
+
+            <div class="admin-card-icon">
+                👥
+            </div>
+
+            <div>
+
+                <h2>
+                    Customers
+                </h2>
+
+                <p>
+                    View registered customers.
+                </p>
+
+                <a href="/admin/customers"
+                   class="add-cart">
+                    View Customers
+                </a>
+
+            </div><br />
+
+        </div>
+
+    </div>
+
+</div>

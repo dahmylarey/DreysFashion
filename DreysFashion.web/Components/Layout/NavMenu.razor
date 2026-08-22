@@ -30,7 +30,7 @@
                      href="/"
                      Match="NavLinkMatch.All">
 
-                <span aria-hidden="true">⌂</span>
+                <i class="fas fa-home me-2" aria-hidden="true"></i>
                 Home
 
             </NavLink>
@@ -43,7 +43,7 @@
             <NavLink class="nav-link"
                      href="/shop">
 
-                <span aria-hidden="true">🛍</span>
+                <i class="fas fa-store me-2" aria-hidden="true"></i>
                 Shop
 
             </NavLink>
@@ -56,7 +56,7 @@
             <NavLink class="nav-link"
                      href="/cart">
 
-                <span aria-hidden="true">🛒</span>
+                <i class="fas fa-shopping-cart me-2" aria-hidden="true"></i>
                 Cart
 
                 @if (cartItemCount > 0)
@@ -73,7 +73,7 @@
         <!-- My Orders -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/my-orders">
-                <span aria-hidden="true">📦</span> My Orders
+                <i class="fas fa-box me-2" aria-hidden="true"></i> My Orders
             </NavLink>
         </div>
 
@@ -83,7 +83,7 @@
             <NavLink class="nav-link"
                      href="/custom-tailoring">
 
-                <span aria-hidden="true">✂</span>
+                <i class="fas fa-scissors me-2" aria-hidden="true"></i>
                 Custom Tailoring
 
             </NavLink>
@@ -96,11 +96,18 @@
             <NavLink class="nav-link"
                      href="/about">
 
-                <span aria-hidden="true">ℹ</span>
+                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
                 About
 
             </NavLink>
 
+        </div>
+        
+        <!-- My Account -->
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="/account">
+                <i class="fas fa-user me-2" aria-hidden="true"></i> My Account
+            </NavLink>
         </div>
 
     </nav>

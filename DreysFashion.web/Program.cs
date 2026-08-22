@@ -20,17 +20,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // Register ASP.NET Core Identity.
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
-    // Require unique email addresses for customer accounts.
-    options.User.RequireUniqueEmail = true;
-
-    // Configure password requirements.
-    options.Password.RequireDigit = true;
-    options.Password.RequireLowercase = true;
-    options.Password.RequireUppercase = true;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
+    options.SignIn.RequireConfirmedAccount = false;
 })
+.AddRoles<IdentityRole>()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+builder.Services.AddAuthorization();
+
+
 
 // Register application services for dependency injection
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -46,7 +42,13 @@ builder.Services.Configure<PaystackSettings>(
 builder.Services.AddHttpClient<IPaymentService, PaystackPaymentService>();
 
 
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    await IdentitySeeder.SeedAsync(scope.ServiceProvider);
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

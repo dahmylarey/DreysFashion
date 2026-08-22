@@ -13,20 +13,17 @@ namespace DreysFashion.web.Services
         private readonly ApplicationDbContext _context;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ProductService"/> class.
+        /// Initializes a new instance of the
+        /// <see cref="ProductService"/> class.
         /// </summary>
-        /// <param name="context">
-        /// The database context used to access product data.
-        /// </param>
         public ProductService(ApplicationDbContext context)
         {
             _context = context;
         }
 
         /// <summary>
-        /// Retrieves all products available in the store.
+        /// Retrieves all products.
         /// </summary>
-        /// <returns>A list of product view models.</returns>
         public async Task<List<ProductViewModel>> GetAllProductsAsync()
         {
             return await _context.Products
@@ -39,7 +36,7 @@ namespace DreysFashion.web.Services
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
                     ImageUrl = product.ImageUrl,
-                    IsAvailable = product.IsAvailable,
+                    IsAvailable = product.IsAvailable
                 })
                 .ToListAsync();
         }
@@ -47,10 +44,6 @@ namespace DreysFashion.web.Services
         /// <summary>
         /// Retrieves a product by its unique identifier.
         /// </summary>
-        /// <param name="id">The unique identifier of the product.</param>
-        /// <returns>
-        /// The product view model if found; otherwise, null.
-        /// </returns>
         public async Task<ProductViewModel?> GetProductByIdAsync(int id)
         {
             return await _context.Products
@@ -64,9 +57,83 @@ namespace DreysFashion.web.Services
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
                     ImageUrl = product.ImageUrl,
-                    IsAvailable = product.IsAvailable,
+                    IsAvailable = product.IsAvailable
                 })
                 .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Creates a new product.
+        /// </summary>
+        public async Task<int> CreateProductAsync(
+            ProductViewModel product)
+        {
+            var newProduct = new Models.Product
+            {
+                Name = product.Name,
+                Description = product.Description,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity,
+                ImageUrl = product.ImageUrl,
+                IsAvailable = product.IsAvailable,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Products.Add(newProduct);
+
+            await _context.SaveChangesAsync();
+
+            return newProduct.Id;
+        }
+
+        /// <summary>
+        /// Updates an existing product.
+        /// </summary>
+        public async Task<bool> UpdateProductAsync(
+            ProductViewModel product)
+        {
+            var existingProduct =
+                await _context.Products
+                    .FirstOrDefaultAsync(
+                        item => item.Id == product.Id);
+
+            if (existingProduct == null)
+            {
+                return false;
+            }
+
+            existingProduct.Name = product.Name;
+            existingProduct.Description = product.Description;
+            existingProduct.Price = product.Price;
+            existingProduct.StockQuantity = product.StockQuantity;
+            existingProduct.ImageUrl = product.ImageUrl;
+            existingProduct.IsAvailable = product.IsAvailable;
+
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        /// <summary>
+        /// Deletes an existing product.
+        /// </summary>
+        public async Task<bool> DeleteProductAsync(int id)
+        {
+            var product =
+                await _context.Products
+                    .FirstOrDefaultAsync(
+                        item => item.Id == id);
+
+            if (product == null)
+            {
+                return false;
+            }
+
+            _context.Products.Remove(product);
+
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

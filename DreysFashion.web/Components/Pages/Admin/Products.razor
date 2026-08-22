@@ -1,0 +1,229 @@
+﻿@page "/admin/products"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.ViewModels
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IProductService ProductService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Manage Products | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Manage Products
+        </h1>
+
+        <p>
+            Add, edit and manage products in your store.
+        </p>
+
+    </div>
+
+    <div class="admin-toolbar">
+
+        <a href="/admin/products/add"
+           class="add-cart">
+            + Add Product
+        </a>
+
+        <a href="/admin"
+           class="secondary-button">
+            ← Dashboard
+        </a>
+
+    </div><br />
+
+    @if (loading)
+    {
+        <div class="page-header">
+            <p>Loading products...</p>
+        </div>
+    }
+    else if (!products.Any())
+    {
+        <div class="page-header">
+
+            <h2>
+                No Products
+            </h2>
+
+            <p>
+                You haven't added any products yet.
+            </p>
+
+            <a href="/admin/products/add"
+               class="add-cart">
+                Add Your First Product
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="admin-product-table">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Product
+                        </th>
+
+                        <th>
+                            Price
+                        </th>
+
+                        <th>
+                            Stock
+                        </th>
+
+                        <th>
+                            Availability
+                        </th>
+
+                        <th>
+                            Actions
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var product in products)
+                    {
+                        <tr>
+
+                            <td>
+
+                                <div class="admin-product-name">
+
+                                    @if (!string.IsNullOrWhiteSpace(
+                                        product.ImageUrl))
+                                    {
+                                        <img src="@product.ImageUrl"
+                                             alt="@product.Name" />
+                                    }
+
+                                    <div>
+
+                                        <strong>
+                                            @product.Name
+                                        </strong>
+
+                                        <small>
+                                            @product.Description
+                                        </small>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+                                ₦@product.Price.ToString("N0")
+                            </td>
+
+                            <td>
+                                @product.StockQuantity
+                            </td>
+
+                            <td>
+
+                                @if (product.IsAvailable)
+                                {
+                                    <span class="status-badge available">
+                                        Available
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge unavailable">
+                                        Unavailable
+                                    </span>
+                                }
+
+                            </td>
+
+                            <td>
+
+                                <div class="admin-actions">
+
+                                    <a href="/admin/products/edit/@product.Id"
+                                       class="edit-button">
+                                        Edit
+                                    </a>
+
+                                    <button class="delete-button"
+                                            @onclick="() => DeleteProduct(product.Id)">
+                                        Delete
+                                    </button>
+
+                                </div>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private List<ProductViewModel> products = new();
+
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        loading = true;
+
+        products =
+            await ProductService.GetAllProductsAsync();
+
+        loading = false;
+    }
+
+    private async Task DeleteProduct(int productId)
+    {
+        try
+        {
+            await ProductService.DeleteProductAsync(productId);
+
+            await LoadProducts();
+        }
+        catch (Exception)
+        {
+            // We will improve error handling later.
+        }
+    }
+}
