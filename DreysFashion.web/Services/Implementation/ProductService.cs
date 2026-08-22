@@ -38,7 +38,8 @@ namespace DreysFashion.web.Services
                     Description = product.Description,
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
-                    ImageUrl = product.ImageUrl
+                    ImageUrl = product.ImageUrl,
+                    IsAvailable = product.IsAvailable,
                 })
                 .ToListAsync();
         }
@@ -62,7 +63,8 @@ namespace DreysFashion.web.Services
                     Description = product.Description,
                     Price = product.Price,
                     StockQuantity = product.StockQuantity,
-                    ImageUrl = product.ImageUrl
+                    ImageUrl = product.ImageUrl,
+                    IsAvailable = product.IsAvailable,
                 })
                 .FirstOrDefaultAsync();
         }

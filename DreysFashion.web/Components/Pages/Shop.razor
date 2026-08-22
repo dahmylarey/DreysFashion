@@ -1,18 +1,25 @@
 ﻿@page "/shop"
+@rendermode InteractiveServer
 
-@using DreysFashion.web.Services.Interfaces
 @using DreysFashion.web.ViewModels
+@using DreysFashion.web.Services.Interfaces
 
 @inject IProductService ProductService
+@inject ICartService CartService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Shop | Drey's Fashion</PageTitle>
 
 <div class="page-container">
 
     <div class="page-header">
-        <p class="eyebrow">DREY'S FASHION</p>
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
 
-        <h1>Our Collection</h1>
+        <h1>
+            Our Collection
+        </h1>
 
         <p>
             Explore our collection of carefully crafted fashion pieces.
@@ -35,15 +42,33 @@
             {
                 <article class="product-card">
 
-                    <a href="@($"/shop/{product.Id}")" class="product-card-link">
+                    <!-- Product -->
+                    <div class="product-card-content"
+                         @onclick="() => OpenProduct(product.Id)">
 
+                        <!-- Product Image -->
                         <div class="product-image">
-                            <span>@product.Name</span>
+
+                            @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                            {
+                                <img src="@product.ImageUrl"
+                                     alt="@product.Name" />
+                            }
+                            else
+                            {
+                                <span>
+                                    @product.Name
+                                </span>
+                            }
+
                         </div>
 
+                        <!-- Product Information -->
                         <div class="product-info">
 
-                            <h3>@product.Name</h3>
+                            <h3>
+                                @product.Name
+                            </h3>
 
                             <p>
                                 @product.Description
@@ -55,34 +80,94 @@
 
                             <br />
 
-                            <small>
-                                @product.StockQuantity available
-                            </small>
+                            @if (product.StockQuantity > 0 && product.IsAvailable)
+                            {
+                                <small>
+                                    @product.StockQuantity available
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="out-of-stock">
+                                    @(product.IsAvailable
+                                        ? "Out of stock"
+                                        : "Currently unavailable")
+                                </small>
+                            }
 
                         </div>
 
-                    </a>
+                    </div>
 
-                    <button class="add-cart">
-                        Add to Cart
-                    </button>
+                    <!-- Add To Cart -->
+                    @if (product.StockQuantity > 0 && product.IsAvailable)
+                    {
+                        <button type="button"
+                                class="add-cart"
+                                @onclick="() => AddToCart(product)">
+
+                            Add to Cart
+
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                class="add-cart"
+                                disabled>
+
+                            Unavailable
+
+                        </button>
+                    }
 
                 </article>
             }
 
         </div>
     }
-                
+
 </div>
 
 @code {
+
+    /// <summary>
+    /// Stores the products displayed on the shop page.
+    /// </summary>
     private List<ProductViewModel>? products;
 
     /// <summary>
-    /// Loads the products when the Shop component is initialized.
+    /// Loads all available products when the Shop component is initialized.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
         products = await ProductService.GetAllProductsAsync();
+    }
+
+    /// <summary>
+    /// Adds the selected product to the shopping cart.
+    /// </summary>
+    /// <param name="product">
+    /// The product selected by the customer.
+    /// </param>
+    private void AddToCart(ProductViewModel product)
+    {
+        if (product.StockQuantity <= 0 || !product.IsAvailable)
+        {
+            return;
+        }
+
+        CartService.AddToCart(product, 1);
+    }
+
+    /// <summary>
+    /// Navigates the customer to the selected product's details page.
+    /// </summary>
+    /// <param name="productId">
+    /// The unique identifier of the selected product.
+    /// </param>
+    private void OpenProduct(int productId)
+    {
+        NavigationManager.NavigateTo($"/shop/{productId}");
     }
 }

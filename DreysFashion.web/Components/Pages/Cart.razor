@@ -1,0 +1,266 @@
+﻿@page "/cart"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.ViewModels
+@using DreysFashion.web.Services.Interfaces
+
+@inject ICartService CartService
+
+<PageTitle>Shopping Cart | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Your Shopping Cart
+        </h1>
+
+        <p>
+            Review the items you've selected before checkout.
+        </p>
+    </div>
+
+    @if (!cartItems.Any())
+    {
+        <div class="empty-cart">
+
+            <h2>
+                Your cart is empty
+            </h2>
+
+            <p>
+                You haven't added any products to your cart yet.
+            </p>
+
+            <a href="/shop" class="add-cart">
+                Continue Shopping
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="cart-container">
+
+            <!-- Cart Items -->
+            <div class="cart-items">
+
+                @foreach (var item in cartItems)
+                {
+                    <article class="cart-item">
+
+                        <!-- Product Image -->
+                        <div class="cart-item-image">
+
+                            @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <img src="@item.ImageUrl"
+                                     alt="@item.ProductName" />
+                            }
+                            else
+                            {
+                                <span>
+                                    @item.ProductName
+                                </span>
+                            }
+
+                        </div>
+
+                        <!-- Product Information -->
+                        <div class="cart-item-info">
+
+                            <h3>
+                                @item.ProductName
+                            </h3>
+
+                            <p>
+                                ₦@item.UnitPrice.ToString("N0")
+                                per item
+                            </p>
+
+                            <!-- Quantity Controls -->
+                            <div class="cart-quantity">
+
+                                <button type="button"
+                                        @onclick="() => DecreaseQuantity(item)"
+                                        disabled="@(item.Quantity <= 1)">
+                                    −
+                                </button>
+
+                                <span>
+                                    @item.Quantity
+                                </span>
+
+                                <button type="button"
+                                        @onclick="() => IncreaseQuantity(item)">
+                                    +
+                                </button>
+
+                            </div>
+
+                            <!-- Item Total -->
+                            <strong>
+                                ₦@item.TotalPrice.ToString("N0")
+                            </strong>
+
+                            <!-- Remove -->
+                            <button type="button"
+                                    class="remove-cart-item"
+                                    @onclick="() => RemoveItem(item.ProductId)">
+                                Remove
+                            </button>
+
+                        </div>
+
+                    </article>
+                }
+
+            </div>
+
+            <!-- Cart Summary -->
+            <aside class="cart-summary">
+
+                <h2>
+                    Order Summary
+                </h2>
+
+                <div class="summary-row">
+
+                    <span>
+                        Items
+                    </span>
+
+                    <span>
+                        @CartService.GetItemCount()
+                    </span>
+
+                </div>
+
+                <div class="summary-row">
+
+                    <span>
+                        Subtotal
+                    </span>
+
+                    <strong>
+                        ₦@CartService.GetTotal().ToString("N0")
+                    </strong>
+
+                </div>
+
+                <hr />
+
+                <div class="summary-total">
+
+                    <span>
+                        Total
+                    </span>
+
+                    <strong>
+                        ₦@CartService.GetTotal().ToString("N0")
+                    </strong>
+
+                </div>
+
+                <button type="button"
+                        class="checkout-button"
+                        @onclick="ProceedToCheckout">
+                    Proceed to Checkout
+                </button>
+
+                <a href="/shop"
+                   class="continue-shopping">
+                    ← Continue Shopping
+                </a>
+
+            </aside>
+
+        </div>
+    }
+
+</div>
+
+@code {
+    /// <summary>
+    /// Stores the items currently in the shopping cart.
+    /// </summary>
+    private IReadOnlyList<CartItemViewModel> cartItems =
+        Array.Empty<CartItemViewModel>();
+
+    /// <summary>
+    /// Loads the current shopping cart when the component is initialized.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        LoadCart();
+    }
+
+    /// <summary>
+    /// Loads the current items from the cart service.
+    /// </summary>
+    private void LoadCart()
+    {
+        cartItems = CartService.GetItems();
+    }
+
+    /// <summary>
+    /// Increases the quantity of a cart item by one.
+    /// </summary>
+    /// <param name="item">
+    /// The cart item whose quantity should be increased.
+    /// </param>
+    private void IncreaseQuantity(CartItemViewModel item)
+    {
+        CartService.UpdateQuantity(
+            item.ProductId,
+            item.Quantity + 1);
+
+        LoadCart();
+    }
+
+    /// <summary>
+    /// Decreases the quantity of a cart item by one.
+    /// </summary>
+    /// <param name="item">
+    /// The cart item whose quantity should be decreased.
+    /// </param>
+    private void DecreaseQuantity(CartItemViewModel item)
+    {
+        if (item.Quantity <= 1)
+        {
+            return;
+        }
+
+        CartService.UpdateQuantity(
+            item.ProductId,
+            item.Quantity - 1);
+
+        LoadCart();
+    }
+
+    /// <summary>
+    /// Removes a product completely from the shopping cart.
+    /// </summary>
+    /// <param name="productId">
+    /// The unique identifier of the product to remove.
+    /// </param>
+    private void RemoveItem(int productId)
+    {
+        CartService.RemoveFromCart(productId);
+
+        LoadCart();
+    }
+
+    /// <summary>
+    /// Handles the checkout button.
+    /// Checkout functionality will be implemented later.
+    /// </summary>
+    private void ProceedToCheckout()
+    {
+        // Checkout functionality will be implemented next.
+    }
+}

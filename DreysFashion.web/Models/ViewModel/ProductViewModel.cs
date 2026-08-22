@@ -31,6 +31,11 @@
         public int StockQuantity { get; set; }
 
         /// <summary>
+        /// Gets or sets a value indicating whether the product is available for purchase.
+        /// </summary>
+        public bool IsAvailable { get; set; }
+
+        /// <summary>
         /// Gets or sets the URL of the product image.
         /// </summary>
         public string? ImageUrl { get; set; }
