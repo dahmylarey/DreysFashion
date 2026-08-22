@@ -46,6 +46,12 @@
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>
+        /// Gets or sets the unique Paystack transaction reference
+        /// associated with this order.
+        /// </summary>
+        public string? PaymentReference { get; set; }
+
+        /// <summary>
         /// Gets or sets the items belonging to this order.
         /// </summary>
         public ICollection<OrderItem> OrderItems { get; set; }

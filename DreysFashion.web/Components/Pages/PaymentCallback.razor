@@ -1,0 +1,217 @@
+﻿@page "/payment-callback"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.ViewModels
+
+@inject IPaymentService PaymentService
+@inject IOrderService OrderService
+@inject ICartService CartService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Payment Verification | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    @if (isVerifying)
+    {
+        <div class="page-header">
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                Verifying Your Payment
+            </h1>
+
+            <p>
+                Please wait while we confirm your payment...
+            </p>
+
+        </div>
+    }
+    else if (paymentSuccessful)
+    {
+        <div class="page-header">
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                Payment Successful!
+            </h1>
+
+            <p>
+                Your payment has been verified successfully.
+            </p>
+
+            @if (orderId.HasValue)
+            {
+                <a href="/order-confirmation/@orderId"
+                   class="add-cart">
+                    View Your Order
+                </a>
+            }
+
+        </div>
+    }
+    else
+    {
+        <div class="page-header">
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                Payment Not Completed
+            </h1>
+
+            <p>
+                We could not verify your payment.
+                Your order has not been marked as paid.
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    @errorMessage
+                </div>
+            }
+
+            <a href="/shop" class="add-cart">
+                Return to Shop
+            </a>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the Paystack transaction reference returned
+    /// in the callback URL.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "reference")]
+    private string? Reference { get; set; }
+
+    /// <summary>
+    /// Indicates whether payment verification is currently running.
+    /// </summary>
+    private bool isVerifying = true;
+
+    /// <summary>
+    /// Indicates whether the payment was successfully verified.
+    /// </summary>
+    private bool paymentSuccessful;
+
+    /// <summary>
+    /// Stores the identifier of the associated order.
+    /// </summary>
+    private int? orderId;
+
+    /// <summary>
+    /// Stores an error message when payment verification fails.
+    /// </summary>
+    private string? errorMessage;
+
+    /// <summary>
+    /// Verifies the Paystack transaction when the callback page loads.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(Reference))
+            {
+                errorMessage =
+                    "No payment reference was received from Paystack.";
+
+                return;
+            }
+
+            // Verify the transaction with Paystack.
+            var transaction =
+                await PaymentService.VerifyPaymentAsync(Reference);
+
+            if (transaction == null)
+            {
+                errorMessage =
+                    "Paystack could not verify this transaction.";
+
+                return;
+            }
+
+            // The transaction must have a successful status.
+            if (!string.Equals(
+                    transaction.Status,
+                    "success",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage =
+                    "The payment was not successful.";
+
+                return;
+            }
+
+            // Find our order using the Paystack reference.
+            var order =
+                await OrderService.GetOrderByPaymentReferenceAsync(
+                    Reference);
+
+            if (order == null)
+            {
+                errorMessage =
+                    "The order associated with this payment could not be found.";
+
+                return;
+            }
+
+            // Verify that Paystack's amount matches our order.
+            var expectedAmount =
+                Convert.ToInt64(order.TotalAmount * 100);
+
+            if (transaction.Amount != expectedAmount)
+            {
+                errorMessage =
+                    "The payment amount could not be verified.";
+
+                return;
+            }
+
+            // Verify that the transaction is in Nigerian Naira.
+            if (!string.Equals(
+                    transaction.Currency,
+                    "NGN",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                errorMessage =
+                    "The payment currency could not be verified.";
+
+                return;
+            }
+
+            // Everything checks out.
+            await OrderService.MarkOrderAsPaidAsync(order.Id);
+
+            orderId = order.Id;
+            paymentSuccessful = true;
+
+            // Clear the cart only after successful payment.
+            CartService.ClearCart();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Payment verification failed: {ex.Message}";
+        }
+        finally
+        {
+            isVerifying = false;
+        }
+    }
+}

@@ -108,5 +108,82 @@ namespace DreysFashion.web.Services
                 .ThenInclude(item => item.Product)
                 .FirstOrDefaultAsync(order => order.Id == orderId);
         }
+
+        /// <summary>
+        /// Associates a Paystack payment reference with an existing order.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        /// <summary>
+        /// Associates a Paystack payment reference with an existing order.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        public async Task SetPaymentReferenceAsync(
+            int orderId,
+            string paymentReference)
+        {
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(order => order.Id == orderId);
+
+            if (order == null)
+            {
+                throw new InvalidOperationException(
+                    $"Order with ID {orderId} was not found.");
+            }
+
+            order.PaymentReference = paymentReference;
+
+            await _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Marks an order as paid.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        public async Task MarkOrderAsPaidAsync(int orderId)
+        {
+            var order = await _context.Orders
+                .FirstOrDefaultAsync(order => order.Id == orderId);
+
+            if (order == null)
+            {
+                throw new InvalidOperationException(
+                    $"Order with ID {orderId} was not found.");
+            }
+
+            order.Status = "Paid";
+
+            await _context.SaveChangesAsync();
+        }
+
+        //// <summary>
+        /// Retrieves an order using its Paystack payment reference.
+        /// </summary>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        /// <returns>
+        /// The matching order if found; otherwise, null.
+        /// </returns>
+        public async Task<Order?> GetOrderByPaymentReferenceAsync(
+            string paymentReference)
+        {
+            return await _context.Orders
+                .Include(order => order.OrderItems)
+                .ThenInclude(item => item.Product)
+                .FirstOrDefaultAsync(
+                    order => order.PaymentReference == paymentReference);
+        }
     }
 }

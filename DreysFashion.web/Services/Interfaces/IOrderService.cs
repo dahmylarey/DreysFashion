@@ -35,5 +35,41 @@ namespace DreysFashion.web.Services.Interfaces
         /// The order if it exists; otherwise, null.
         /// </returns>
         Task<Order?> GetOrderByIdAsync(int orderId);
+
+        /// <summary>
+        /// Associates a Paystack payment reference with an order.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        Task SetPaymentReferenceAsync(
+            int orderId,
+            string paymentReference);
+
+        /// <summary>
+        /// Retrieves an order using its Paystack payment reference.
+        /// </summary>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        /// <returns>
+        /// The matching order if found; otherwise, null.
+        /// </returns>
+        Task<Order?> GetOrderByPaymentReferenceAsync(
+            string paymentReference);
+
+
+        /// <summary>
+        /// Marks an order as paid after successful payment verification.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        Task MarkOrderAsPaidAsync(int orderId);
+
+
     }
 }

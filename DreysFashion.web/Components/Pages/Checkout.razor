@@ -6,6 +6,7 @@
 
 @inject ICartService CartService
 @inject IOrderService OrderService
+@inject IPaymentService PaymentService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Checkout | Drey's Fashion</PageTitle>
@@ -244,8 +245,8 @@
     }
 
     /// <summary>
-    /// Creates a new pending order using the customer's checkout information
-    /// and the items currently in the shopping cart.
+    /// Creates a pending order, initializes the Paystack payment,
+    /// and redirects the customer to Paystack to complete payment.
     /// </summary>
     private async Task PlaceOrder()
     {
@@ -265,21 +266,70 @@
             isSubmitting = true;
             errorMessage = null;
 
+            // Create the order in our database.
             var orderId = await OrderService.CreateOrderAsync(
                 checkout,
                 cartItems);
 
+            // Retrieve the newly created order.
+            var order = await OrderService.GetOrderByIdAsync(orderId);
+
+            if (order == null)
+            {
+                throw new InvalidOperationException(
+                    $"Order {orderId} could not be found after creation.");
+            }
+
+            // Generate a unique Paystack reference.
+            var paymentReference =
+                $"DREYS-{orderId}-{Guid.NewGuid():N}";
+
+            // Save the Paystack reference against the order.
+            await OrderService.SetPaymentReferenceAsync(
+                orderId,
+                paymentReference);
+
+            // Initialize the Paystack transaction.
+            var payment = await PaymentService.InitializePaymentAsync(
+                checkout.CustomerEmail,
+                order.TotalAmount,
+                paymentReference);
+
+            // Redirect customer to Paystack.
             NavigationManager.NavigateTo(
-                $"/order-confirmation/{orderId}");
+                payment.AuthorizationUrl,
+                forceLoad: true);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            errorMessage =
-                "We could not create your order. Please try again.";
+            // Show the actual error while developing.
+            errorMessage = $"Payment initialization failed: {ex.Message}";
         }
         finally
         {
             isSubmitting = false;
         }
+    }
+
+    /// <summary>
+    /// Retrieves the total amount for an order.
+    /// </summary>
+    /// <param name="orderId">
+    /// The unique identifier of the order.
+    /// </param>
+    /// <returns>
+    /// The total order amount.
+    /// </returns>
+    private async Task<decimal> GetOrderTotalAsync(int orderId)
+    {
+        var order = await OrderService.GetOrderByIdAsync(orderId);
+
+        if (order == null)
+        {
+            throw new InvalidOperationException(
+                $"Order with ID {orderId} was not found.");
+        }
+
+        return order.TotalAmount;
     }
 }

@@ -1,5 +1,6 @@
 using DreysFashion.web.Components;
 using DreysFashion.web.Data;
+using DreysFashion.web.Models;
 using DreysFashion.web.Services;
 using DreysFashion.web.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+
+//paystack
+builder.Services.Configure<PaystackSettings>(
+    builder.Configuration.GetSection("Paystack"));
+
+builder.Services.AddHttpClient<IPaymentService, PaystackPaymentService>();
 
 
 var app = builder.Build();
