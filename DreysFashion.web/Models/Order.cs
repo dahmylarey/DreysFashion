@@ -11,12 +11,24 @@
         public int Id { get; set; }
 
         /// <summary>
+        /// Gets or sets the Identity user ID of the customer who placed the order.
+        /// </summary>
+        public string? UserId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the customer associated with this order.
+        /// </summary>
+        public ApplicationUser? User { get; set; }
+
+        /// <summary>
         /// Gets or sets the customer's full name.
+        /// This is stored as a snapshot of the customer's name at checkout.
         /// </summary>
         public string CustomerName { get; set; } = string.Empty;
 
         /// <summary>
         /// Gets or sets the customer's email address.
+        /// This is stored as a snapshot of the customer's email at checkout.
         /// </summary>
         public string CustomerEmail { get; set; } = string.Empty;
 

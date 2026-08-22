@@ -5,6 +5,7 @@ using DreysFashion.web.Services;
 using DreysFashion.web.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using DreysFashion.web.Endpoints;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,8 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 
+//builder.Services.AddScoped<HttpClient>();
+
 //paystack
 builder.Services.Configure<PaystackSettings>(
     builder.Configuration.GetSection("Paystack"));
@@ -63,5 +66,8 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapAccountEndpoints();
+app.MapPaymentEndpoints();
 
 app.Run();

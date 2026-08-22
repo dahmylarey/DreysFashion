@@ -1,0 +1,218 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.JSInterop
+
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Login | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Welcome Back
+        </h1>
+
+        <p>
+            Sign in to access your account and orders.
+        </p>
+
+    </div>
+
+    <div class="auth-container">
+
+        @if (registered)
+        {
+            <div class="alert alert-success">
+                Your account was created successfully.
+                Please sign in.
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="alert alert-danger">
+                @errorMessage
+            </div>
+        }
+
+        <EditForm Model="model"
+                  OnValidSubmit="HandleLogin">
+
+            <DataAnnotationsValidator />
+
+            <ValidationSummary />
+
+            <div class="form-group">
+
+                <label>
+                    Email Address
+                </label>
+
+                <InputText @bind-Value="model.Email"
+                           type="email"
+                           class="form-control"
+                           placeholder="Enter your email" />
+
+                <ValidationMessage For="@(() => model.Email)" />
+
+            </div><br />
+
+            <div class="form-group">
+
+                <label>
+                    Password
+                </label>
+
+                <InputText @bind-Value="model.Password"
+                           type="password"
+                           class="form-control"
+                           placeholder="Enter your password" />
+
+                <ValidationMessage For="@(() => model.Password)" />
+
+            </div><br />
+
+            <button type="submit"
+                    class="add-cart"
+                    disabled="@loggingIn">
+
+                @if (loggingIn)
+                {
+                    <span>Signing In...</span>
+                }
+                else
+                {
+                    <span>Sign In</span>
+                }
+
+            </button>
+
+        </EditForm>
+
+        <div class="auth-footer">
+
+            <p>
+                Don't have an account?
+                <a href="/register">
+                    Create an account
+                </a>
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the login form information.
+    /// </summary>
+    private LoginModel model = new();
+
+    /// <summary>
+    /// Indicates whether login is currently processing.
+    /// </summary>
+    private bool loggingIn;
+
+    /// <summary>
+    /// Stores the login error message.
+    /// </summary>
+    private string? errorMessage;
+
+    /// <summary>
+    /// Indicates whether the customer has just registered.
+    /// </summary>
+    private bool registered;
+
+    /// <summary>
+    /// Initializes the login page.
+    /// </summary>
+    protected override void OnInitialized()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(
+            NavigationManager.Uri);
+
+        var query =
+            Microsoft.AspNetCore.WebUtilities
+                .QueryHelpers
+                .ParseQuery(uri.Query);
+
+        registered =
+            query.TryGetValue("registered", out var value)
+            && value == "true";
+    }
+
+    /// <summary>
+    /// Sends the customer's credentials to the login endpoint.
+    /// </summary>
+    private async Task HandleLogin()
+    {
+        loggingIn = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await JS.InvokeAsync<bool>(
+                "dreyFashionLogin",
+                model.Email,
+                model.Password);
+
+            if (result)
+            {
+                NavigationManager.NavigateTo(
+                    "/my-orders",
+                    forceLoad: true);
+
+                return;
+            }
+
+            errorMessage =
+                "Invalid email or password.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to sign in: {ex.Message}";
+        }
+        finally
+        {
+            loggingIn = false;
+        }
+    }
+
+    /// <summary>
+    /// Represents the login form.
+    /// </summary>
+    private sealed class LoginModel
+    {
+        /// <summary>
+        /// Gets or sets the customer's email address.
+        /// </summary>
+        [Required(
+            ErrorMessage =
+                "Please enter your email address.")]
+        [EmailAddress(
+            ErrorMessage =
+                "Please enter a valid email address.")]
+        public string Email { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets or sets the customer's password.
+        /// </summary>
+        [Required(
+            ErrorMessage =
+                "Please enter your password.")]
+        public string Password { get; set; } = string.Empty;
+    }
+}

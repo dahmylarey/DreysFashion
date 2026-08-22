@@ -27,9 +27,12 @@ namespace DreysFashion.web.Services
 
         //Create order from checkout and cart items
         /// <summary>
-        /// Creates a new order from the customer's checkout information
-        /// and the current shopping cart.
+        /// Creates a new order for the authenticated customer
+        /// using the customer's checkout information and cart items.
         /// </summary>
+        /// <param name="userId">
+        /// The Identity ID of the authenticated customer.
+        /// </param>
         /// <param name="checkout">
         /// The customer's checkout information.
         /// </param>
@@ -40,9 +43,16 @@ namespace DreysFashion.web.Services
         /// The identifier of the newly created order.
         /// </returns>
         public async Task<int> CreateOrderAsync(
+            string userId,
             CheckoutViewModel checkout,
             IReadOnlyList<CartItemViewModel> cartItems)
         {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new InvalidOperationException(
+                    "A valid authenticated user is required to create an order.");
+            }
+
             if (cartItems == null || cartItems.Count == 0)
             {
                 throw new InvalidOperationException(
@@ -52,10 +62,13 @@ namespace DreysFashion.web.Services
             // Create the order.
             var order = new Order
             {
+                UserId = userId,
+
                 CustomerName = checkout.CustomerName,
                 CustomerEmail = checkout.CustomerEmail,
                 CustomerPhone = checkout.CustomerPhone,
                 DeliveryAddress = checkout.DeliveryAddress,
+
                 Status = "Pending",
                 CreatedAt = DateTime.UtcNow
             };
@@ -68,7 +81,8 @@ namespace DreysFashion.web.Services
             foreach (var cartItem in cartItems)
             {
                 var productExists = await _context.Products
-                    .AnyAsync(product => product.Id == cartItem.ProductId);
+                    .AnyAsync(product =>
+                        product.Id == cartItem.ProductId);
 
                 if (!productExists)
                 {
@@ -113,6 +127,36 @@ namespace DreysFashion.web.Services
                 .FirstOrDefaultAsync(order => order.Id == orderId);
         }
 
+        /// <summary>
+        /// Retrieves an order only when it belongs to the specified
+        /// authenticated customer.
+        /// </summary>
+        /// <param name="orderId">
+        /// The unique identifier of the order.
+        /// </param>
+        /// <param name="userId">
+        /// The Identity ID of the authenticated customer.
+        /// </param>
+        /// <returns>
+        /// The order if it belongs to the specified user;
+        /// otherwise, null.
+        /// </returns>
+        public async Task<Order?> GetOrderByIdForUserAsync(
+            int orderId,
+            string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return null;
+            }
+
+            return await _context.Orders
+                .Include(order => order.OrderItems)
+                .ThenInclude(item => item.Product)
+                .FirstOrDefaultAsync(order =>
+                    order.Id == orderId &&
+                    order.UserId == userId);
+        }
 
         //Set payment reference for an order
         /// <summary>
@@ -211,6 +255,32 @@ namespace DreysFashion.web.Services
         {
             return await _context.Orders
                 .Where(order => order.CustomerEmail == email)
+                .OrderByDescending(order => order.CreatedAt)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Retrieves all orders belonging to a specific authenticated customer.
+        /// </summary>
+        /// <param name="userId">
+        /// The Identity ID of the authenticated customer.
+        /// </param>
+        /// <returns>
+        /// A list of the customer's orders, newest first.
+        /// </returns>
+        /// 
+
+        //Get Orders By UserId
+        public async Task<List<Order>> GetOrdersByUserIdAsync(
+            string userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return new List<Order>();
+            }
+
+            return await _context.Orders
+                .Where(order => order.UserId == userId)
                 .OrderByDescending(order => order.CreatedAt)
                 .ToListAsync();
         }

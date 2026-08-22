@@ -4,6 +4,7 @@
 @using DreysFashion.web.Models
 @using DreysFashion.web.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 
 @inject IOrderService OrderService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -125,7 +126,7 @@
                             <strong>
                                 ₦@order.TotalAmount.ToString("N0")
                             </strong>
-                        </div>
+                        </div><br />
 
                     </div>
 
@@ -136,7 +137,7 @@
                             View Order
                         </a>
 
-                    </div><br />
+                    </div>
 
                 </article>
             }
@@ -154,7 +155,7 @@
     private List<Order> orders = new();
 
     /// <summary>
-    /// Indicates whether the order information is loading.
+    /// Indicates whether the order information is currently loading.
     /// </summary>
     private bool loading = true;
 
@@ -164,7 +165,7 @@
     private bool isAuthenticated;
 
     /// <summary>
-    /// Loads the authenticated customer's orders.
+    /// Loads the authenticated customer's orders when the page initializes.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
@@ -172,8 +173,7 @@
             await AuthenticationStateProvider
                 .GetAuthenticationStateAsync();
 
-        var user =
-            authenticationState.User;
+        var user = authenticationState.User;
 
         isAuthenticated =
             user.Identity?.IsAuthenticated ?? false;
@@ -184,18 +184,20 @@
             return;
         }
 
-        var email =
-            user.Identity?.Name;
+        // Get the Identity user ID.
+        var userId =
+            user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-        if (string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(userId))
         {
             loading = false;
             return;
         }
 
+        // Retrieve only orders belonging to this user.
         orders =
             await OrderService
-                .GetOrdersByCustomerEmailAsync(email);
+                .GetOrdersByUserIdAsync(userId);
 
         loading = false;
     }

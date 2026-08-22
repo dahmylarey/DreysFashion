@@ -80,6 +80,14 @@ namespace DreysFashion.web.Data
                 .WithMany()
                 .HasForeignKey(item => item.ProductId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+
+            // Configure Order -> User relationship.
+            modelBuilder.Entity<Order>()
+    .HasOne(order => order.User)
+    .WithMany()
+    .HasForeignKey(order => order.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

@@ -3,11 +3,14 @@
 
 @using DreysFashion.web.Services.Interfaces
 @using DreysFashion.web.ViewModels
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
 
 @inject ICartService CartService
 @inject IOrderService OrderService
 @inject IPaymentService PaymentService
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Checkout | Drey's Fashion</PageTitle>
 
@@ -243,10 +246,11 @@
     {
         cartItems = CartService.GetItems();
     }
-
+    
     /// <summary>
-    /// Creates a pending order, initializes the Paystack payment,
-    /// and redirects the customer to Paystack to complete payment.
+    /// Creates a pending order for the authenticated customer,
+    /// initializes the Paystack payment, and redirects the customer
+    /// to Paystack to complete payment.
     /// </summary>
     private async Task PlaceOrder()
     {
@@ -266,13 +270,62 @@
             isSubmitting = true;
             errorMessage = null;
 
-            // Create the order in our database.
-            var orderId = await OrderService.CreateOrderAsync(
-                checkout,
-                cartItems);
+            // Get the current authentication state.
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            // Make sure the customer is authenticated.
+            if (user?.Identity == null ||
+                !user.Identity.IsAuthenticated)
+            {
+                errorMessage =
+                    "You must be signed in to place an order.";
+
+                return;
+            }
+
+            // Get the authenticated customer's Identity ID.
+            var userId =
+                user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine authenticated user ID.";
+
+                return;
+            }
+
+            // Get the authenticated customer's email.
+            var authenticatedEmail =
+                user.FindFirst(ClaimTypes.Email)?.Value;
+
+            if (string.IsNullOrWhiteSpace(authenticatedEmail))
+            {
+                errorMessage =
+                    "Unable to determine your account email.";
+
+                return;
+            }
+
+            // Make sure the order belongs to the
+            // authenticated customer's account.
+            checkout.CustomerEmail = authenticatedEmail;
+
+            // Create the order and associate it with
+            // the authenticated Identity user.
+            var orderId =
+                await OrderService.CreateOrderAsync(
+                    userId,
+                    checkout,
+                    cartItems);
 
             // Retrieve the newly created order.
-            var order = await OrderService.GetOrderByIdAsync(orderId);
+            var order =
+                await OrderService.GetOrderByIdAsync(orderId);
 
             if (order == null)
             {
@@ -289,27 +342,29 @@
                 orderId,
                 paymentReference);
 
-            // Initialize the Paystack transaction.
-            var payment = await PaymentService.InitializePaymentAsync(
-                checkout.CustomerEmail,
-                order.TotalAmount,
-                paymentReference);
+            // Initialize Paystack payment.
+            var payment =
+                await PaymentService.InitializePaymentAsync(
+                    authenticatedEmail,
+                    order.TotalAmount,
+                    paymentReference);
 
-            // Redirect customer to Paystack.
+            // Redirect the customer to Paystack.
             NavigationManager.NavigateTo(
                 payment.AuthorizationUrl,
                 forceLoad: true);
         }
         catch (Exception ex)
         {
-            // Show the actual error while developing.
-            errorMessage = $"Payment initialization failed: {ex.Message}";
+            errorMessage =
+                $"Payment initialization failed: {ex.Message}";
         }
         finally
         {
             isSubmitting = false;
         }
     }
+   
 
     /// <summary>
     /// Retrieves the total amount for an order.
