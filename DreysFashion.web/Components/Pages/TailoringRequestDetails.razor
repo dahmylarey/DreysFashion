@@ -1,0 +1,488 @@
+﻿@page "/tailoring-request/{id:int}"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]
+
+@inject ITailoringService TailoringService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Tailoring Request #@id | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    @if (isLoading)
+    {
+        <div class="page-header">
+            <p>Loading your tailoring request...</p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="page-header">
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                Request Not Found
+            </h1>
+
+            <p>
+                @errorMessage
+            </p>
+
+            <a href="/my-tailoring-requests"
+               class="add-cart">
+                Back To My Requests
+            </a>
+
+        </div>
+    }
+    else if (request != null)
+    {
+        <div class="order-confirmation">
+
+            <!-- ================================================= -->
+            <!-- HEADER -->
+            <!-- ================================================= -->
+
+            <div class="confirmation-header">
+
+                <p class="eyebrow">
+                    CUSTOM TAILORING
+                </p>
+
+                <div class="confirmation-icon">
+                    ✂
+                </div>
+
+                <h1>
+                    @request.OutfitType
+                </h1>
+
+                <p>
+                    Tailoring Request #@request.Id
+                </p>
+
+                <span class="@GetStatusClass(request.Status)">
+                    @request.Status
+                </span>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- REQUEST INFORMATION -->
+            <!-- ================================================= -->
+
+            <div class="order-summary">
+
+                <h2>
+                    Request Details
+                </h2>
+
+                <div class="order-customer-details">
+
+                    <p>
+                        <strong>Outfit Type:</strong>
+                        @request.OutfitType
+                    </p>
+
+                    <p>
+                        <strong>Submitted:</strong>
+                        @request.CreatedAt
+                        .ToLocalTime()
+                        .ToString("dd MMM yyyy, hh:mm tt")
+                    </p>
+
+                    <p>
+                        <strong>Measurement Unit:</strong>
+                        @request.MeasurementUnit
+                    </p>
+
+                </div>
+
+                <hr />
+
+                <!-- ================================================= -->
+                <!-- STYLE -->
+                <!-- ================================================= -->
+
+                <h3>
+                    Style Description
+                </h3>
+
+                <p>
+                    @request.StyleDescription
+                </p>
+
+
+                @if (!string.IsNullOrWhiteSpace(
+                    request.FabricPreference))
+                {
+                    <hr />
+
+                    <h3>
+                        Fabric Preference
+                    </h3>
+
+                    <p>
+                        @request.FabricPreference
+                    </p>
+                }
+
+
+                @if (!string.IsNullOrWhiteSpace(
+                    request.AdditionalInstructions))
+                {
+                    <hr />
+
+                    <h3>
+                        Additional Instructions
+                    </h3>
+
+                    <p>
+                        @request.AdditionalInstructions
+                    </p>
+                }
+
+
+                <!-- ================================================= -->
+                <!-- MEASUREMENTS -->
+                <!-- ================================================= -->
+
+                <hr />
+
+                <h2>
+                    Measurements
+                </h2>
+
+                <div class="measurement-summary">
+
+                    <div>
+                        <span>Chest</span>
+                        <strong>
+                            @DisplayMeasurement(request.Chest)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Waist</span>
+                        <strong>
+                            @DisplayMeasurement(request.Waist)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Hip</span>
+                        <strong>
+                            @DisplayMeasurement(request.Hip)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Shoulder</span>
+                        <strong>
+                            @DisplayMeasurement(request.Shoulder)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Sleeve Length</span>
+                        <strong>
+                            @DisplayMeasurement(request.SleeveLength)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Top Length</span>
+                        <strong>
+                            @DisplayMeasurement(request.TopLength)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Trouser Waist</span>
+                        <strong>
+                            @DisplayMeasurement(request.TrouserWaist)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Trouser Length</span>
+                        <strong>
+                            @DisplayMeasurement(request.TrouserLength)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Thigh</span>
+                        <strong>
+                            @DisplayMeasurement(request.Thigh)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Knee</span>
+                        <strong>
+                            @DisplayMeasurement(request.Knee)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Ankle</span>
+                        <strong>
+                            @DisplayMeasurement(request.Ankle)
+                        </strong>
+                    </div>
+
+                </div>
+
+
+                <!-- ================================================= -->
+                <!-- QUOTE -->
+                <!-- ================================================= -->
+
+                <hr />
+
+                <h2>
+                    Tailoring Quote
+                </h2>
+
+                @if (request.QuotedAmount.HasValue)
+                {
+                    <div class="summary-total">
+
+                        <span>
+                            Quoted Amount
+                        </span>
+
+                        <strong>
+                            ₦@request.QuotedAmount.Value.ToString("N0")
+                        </strong>
+
+                    </div>
+                }
+                else
+                {
+                    <p>
+                        Your tailor has not provided a quote yet.
+                    </p>
+                }
+
+
+                <!-- ================================================= -->
+                <!-- ADMIN NOTES -->
+                <!-- ================================================= -->
+                @if (!string.IsNullOrWhiteSpace(
+                                    request.AdminNotes))
+                {
+                    <hr />
+
+                    <div class="tailoring-admin-notes">
+
+                        <h2>
+                            Tailor's Notes
+                        </h2>
+
+                        <p>
+                            @request.AdminNotes
+                        </p>
+
+                    </div>
+                }
+
+
+                <!-- ================================================= -->
+                <!-- STATUS -->
+                <!-- ================================================= -->
+
+                <hr />
+
+                <div class="summary-row">
+
+                    <span>
+                        Current Status
+                    </span>
+
+                    <strong>
+                        @request.Status
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- ACTIONS -->
+            <!-- ================================================= -->
+
+            <div class="confirmation-actions">
+
+                <a href="/my-tailoring-requests"
+                   class="add-cart">
+
+                    Back To My Requests
+
+                </a>
+
+                <a href="/custom-tailoring"
+                   class="add-cart">
+
+                    Create Another Request
+
+                </a>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    /// <summary>
+    /// Gets the tailoring request ID from the route.
+    /// </summary>
+    [Parameter]
+    public int id { get; set; }
+
+
+    /// <summary>
+    /// Stores the requested tailoring record.
+    /// </summary>
+    private TailoringRequest? request;
+
+
+    /// <summary>
+    /// Indicates whether the request is being loaded.
+    /// </summary>
+    private bool isLoading = true;
+
+
+    /// <summary>
+    /// Stores any error message.
+    /// </summary>
+    private string? errorMessage;
+
+
+    /// <summary>
+    /// Loads the requested tailoring record.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine your account.";
+
+                return;
+            }
+
+            var loadedRequest =
+                await TailoringService
+                    .GetRequestByIdAsync(id);
+
+            if (loadedRequest == null)
+            {
+                errorMessage =
+                    "The tailoring request could not be found.";
+
+                return;
+            }
+
+            // IMPORTANT:
+            // Make sure the customer can only view
+            // their own tailoring request.
+            if (loadedRequest.UserId != userId)
+            {
+                errorMessage =
+                    "You do not have permission to view this request.";
+
+                return;
+            }
+
+            request = loadedRequest;
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load your tailoring request: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Formats a measurement for display.
+    /// </summary>
+    private string DisplayMeasurement(decimal? value)
+    {
+        if (!value.HasValue)
+        {
+            return "Not provided";
+        }
+
+        return value.Value.ToString("0.##");
+    }
+
+
+    /// <summary>
+    /// Returns the CSS class for a request status.
+    /// </summary>
+    private string GetStatusClass(string status)
+    {
+        return status?.ToLowerInvariant() switch
+        {
+            "pending" =>
+                "status-badge status-pending",
+
+            "quote provided" =>
+                "status-badge status-quote",
+
+            "approved" =>
+                "status-badge status-approved",
+
+            "in progress" =>
+                "status-badge status-progress",
+
+            "ready" =>
+                "status-badge status-ready",
+
+            "completed" =>
+                "status-badge status-completed",
+
+            "cancelled" =>
+                "status-badge status-cancelled",
+
+            _ =>
+                "status-badge"
+        };
+    }
+}

@@ -8,10 +8,12 @@
 }
 
 .product-thumb {
-    width: 64px;
-    height: 64px;
+    width: 72px;
+    height: 72px;
     object-fit: cover;
-    background: #f5f5f5;
+    background: #f8f9fa;
+    border-radius: 0.5rem;
+    box-shadow: 0 6px 14px rgba(20,20,20,0.04);
 }
 
 .status-badge {
@@ -22,6 +24,22 @@
 
 .admin-actions .btn {
     min-width: 36px;
+}
+
+.delete-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.35);
+    z-index: 1050;
+}
+
+.delete-modal {
+    max-width: 460px;
+    width: 100%;
+    border-radius: 0.6rem;
 }
 
 @media (max-width: 767.98px) {

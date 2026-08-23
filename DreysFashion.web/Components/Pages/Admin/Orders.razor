@@ -22,8 +22,8 @@
             <p class="text-muted mb-0">View customer orders and manage their status.</p>
         </div>
 
-        <div class="admin-toolbar d-flex gap-2">
-            <a href="/admin" class="btn btn-outline-secondary btn-sm">
+        <div class="admin-toolbar d-flex gap-2 align-items-center">
+            <a href="/admin" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
                 <i class="fas fa-arrow-left me-2"></i> Dashboard
             </a>
         </div>
@@ -94,7 +94,7 @@
                             </td>
 
                             <td>
-                                <select class="form-select form-select-sm" value="@order.Status" @onchange="(e) => ChangeStatus(oid, e.Value?.ToString())">
+                                <select class="form-select form-select-sm w-auto" value="@order.Status" @onchange="(e) => ChangeStatus(oid, e.Value?.ToString())">
                                     <option value="Pending">Pending</option>
                                     <option value="Paid">Paid</option>
                                     <option value="Processing">Processing</option>

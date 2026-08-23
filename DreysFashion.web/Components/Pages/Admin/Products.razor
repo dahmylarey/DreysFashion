@@ -23,13 +23,13 @@
             <p class="text-muted mb-0">Add, edit and manage products in your store.</p>
         </div>
 
-        <div class="admin-toolbar d-flex gap-2">
-            <a href="/admin/products/add" class="btn btn-primary btn-sm">
+        <div class="admin-toolbar d-flex gap-2 align-items-center">
+            <a href="/admin/products/add" class="btn btn-primary btn-sm d-flex align-items-center">
                 <i class="fas fa-plus me-2" aria-hidden="true"></i>
                 Add Product
             </a>
 
-            <a href="/admin" class="btn btn-outline-secondary btn-sm">
+            <a href="/admin" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
                 <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
                 Dashboard
             </a>
@@ -113,9 +113,10 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
 
-                                    <button class="delete-button"
+                                    <button class="btn btn-sm btn-danger d-flex align-items-center" title="Delete"
                                             @onclick="() => ConfirmDelete(product)">
-                                        Delete
+                                        <i class="fas fa-trash me-1"></i> 
+                                        <span class="d-none d-md-inline">Delete</span>
                                     </button>
                                 </div>
                             </td>
@@ -130,11 +131,12 @@
     {
         <div class="delete-overlay">
 
-            <div class="delete-modal">
+            <div class="delete-modal card p-4 shadow-sm">
 
-                <h2>
-                    Delete Product?
-                </h2>
+                <h5 class="mb-3">
+                    <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                    Confirm Delete
+                </h5>
 
                 <p>
                     Are you sure you want to delete
@@ -145,9 +147,9 @@
                     This action cannot be undone.
                 </p>
 
-                <div class="admin-actions">
+                <div class="admin-actions d-flex gap-2 justify-content-end mt-3">
 
-                    <button class="delete-button"
+                    <button class="btn btn-danger"
                             @onclick="DeleteConfirmed"
                             disabled="@isDeleting">
 
@@ -166,7 +168,7 @@
 
                     </button>
 
-                    <button class="secondary-button"
+                    <button class="btn btn-secondary"
                             @onclick="CancelDelete"
                             disabled="@isDeleting">
 

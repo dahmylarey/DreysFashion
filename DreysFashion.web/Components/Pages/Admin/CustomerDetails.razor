@@ -1,0 +1,422 @@
+﻿@page "/admin/customers/{customerId}"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.ViewModels
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ICustomerService CustomerService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Customer Details | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+
+        <div>
+            <p class="eyebrow text-muted">
+                DREY'S FASHION
+            </p>
+
+            <h1 class="h3 mb-1">
+                Customer Details
+            </h1>
+
+            <p class="text-muted mb-0">
+                View customer information and order history.
+            </p>
+        </div>
+
+        <div class="admin-toolbar d-flex gap-2">
+
+            <a href="/admin/customers"
+               class="btn btn-outline-secondary btn-sm">
+
+                <i class="fas fa-arrow-left me-2"></i>
+
+                Back to Customers
+
+            </a>
+
+        </div>
+
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+
+                <span class="visually-hidden">
+                    Loading...
+                </span>
+
+            </div>
+
+            <p class="text-muted mt-3">
+                Loading customer...
+            </p>
+
+        </div>
+    }
+    else if (customer == null)
+    {
+        <div class="page-header">
+
+            <h2>
+                Customer Not Found
+            </h2>
+
+            <p>
+                The customer you're looking for does not exist.
+            </p>
+
+            <a href="/admin/customers"
+               class="btn btn-primary">
+
+                Back to Customers
+
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <!-- Customer Information -->
+
+        <div class="row g-3 mb-4">
+
+            <div class="col-12 col-lg-8">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="d-flex align-items-center gap-3 mb-4">
+
+                            <div class="customer-avatar">
+
+                                <i class="fas fa-user"></i>
+
+                            </div>
+
+                            <div>
+
+                                <h4 class="mb-1">
+                                    @customer.FullName
+                                </h4>
+
+                                <span class="text-muted">
+                                    Customer
+                                </span>
+
+                            </div>
+
+                        </div>
+
+                        <div class="row g-3">
+
+                            <div class="col-12 col-md-6">
+
+                                <div class="text-muted small">
+                                    Email
+                                </div>
+
+                                <div class="fw-semibold">
+                                    @customer.Email
+                                </div>
+
+                            </div>
+
+                            <div class="col-12 col-md-6">
+
+                                <div class="text-muted small">
+                                    Phone
+                                </div>
+
+                                <div class="fw-semibold">
+
+                                    @(string.IsNullOrWhiteSpace(customer.PhoneNumber)
+                                        ? "Not provided"
+                                        : customer.PhoneNumber)
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-12 col-md-6">
+
+                                <div class="text-muted small">
+                                    Registered
+                                </div>
+
+                                <div class="fw-semibold">
+                                    @customer.CreatedAt
+                                    .ToLocalTime()
+                                    .ToString("dd MMMM yyyy")
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Statistics -->
+
+            <div class="col-12 col-lg-4">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <h5 class="card-title mb-4">
+                            Order Summary
+                        </h5>
+
+                        <div class="d-flex justify-content-between mb-3">
+
+                            <span class="text-muted">
+                                Total Orders
+                            </span>
+
+                            <strong>
+                                @customer.OrderCount
+                            </strong>
+
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+
+                            <span class="text-muted">
+                                Total Spent
+                            </span>
+
+                            <strong>
+                                ₦@customer.TotalSpent.ToString("N0")
+                            </strong>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Order History -->
+
+        <div class="card">
+
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+
+                    <div>
+
+                        <h4 class="mb-1">
+                            Order History
+                        </h4>
+
+                        <p class="text-muted mb-0">
+                            Orders placed by this customer.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                @if (!orders.Any())
+                {
+                    <div class="text-center py-4">
+
+                        <i class="fas fa-receipt fa-2x text-muted mb-3"></i>
+
+                        <h5>
+                            No Orders
+                        </h5>
+
+                        <p class="text-muted mb-0">
+                            This customer has not placed any orders yet.
+                        </p>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+
+                        <table class="table table-hover align-middle">
+
+                            <thead class="table-light">
+
+                                <tr>
+
+                                    <th>
+                                        Order
+                                    </th>
+
+                                    <th>
+                                        Date
+                                    </th>
+
+                                    <th>
+                                        Total
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                    <th class="text-end">
+                                        Action
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody>
+
+                                @foreach (var order in orders)
+                                {
+                                    <tr>
+
+                                        <td>
+                                            <strong>
+                                                #@order.Id
+                                            </strong>
+                                        </td>
+
+                                        <td>
+                                            @order.CreatedAt
+                                            .ToLocalTime()
+                                            .ToString("dd MMM yyyy")
+                                        </td>
+
+                                        <td>
+                                            ₦@order.TotalAmount.ToString("N0")
+                                        </td>
+
+                                        <td>
+
+                                            @if (order.Status == "Paid" ||
+                                                 order.Status == "Processing" ||
+                                                 order.Status == "Shipped" ||
+                                                 order.Status == "Delivered")
+                                            {
+                                                <span class="badge bg-success">
+                                                    @order.Status
+                                                </span>
+                                            }
+                                            else if (order.Status == "Cancelled")
+                                            {
+                                                <span class="badge bg-danger">
+                                                    @order.Status
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">
+                                                    @order.Status
+                                                </span>
+                                            }
+
+                                        </td>
+
+                                        <td class="text-end">
+
+                                            <a href="/order-confirmation/@order.Id"
+                                               class="btn btn-sm btn-outline-primary">
+
+                                                <i class="fas fa-eye me-1"></i>
+
+                                                View
+
+                                            </a>
+
+                                        </td>
+
+                                    </tr>
+                                }
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">
+            @errorMessage
+        </div>
+    }
+
+</div>
+
+@code {
+
+    [Parameter]
+    public string customerId { get; set; } = string.Empty;
+
+    private CustomerViewModel? customer;
+
+    private List<Order> orders = new();
+
+    private bool loading = true;
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomer();
+    }
+
+    private async Task LoadCustomer()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            customer =
+                await CustomerService
+                    .GetCustomerByIdAsync(customerId);
+
+            if (customer != null)
+            {
+                orders =
+                    await CustomerService
+                        .GetCustomerOrdersAsync(customerId);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load customer: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

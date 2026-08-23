@@ -1,0 +1,264 @@
+﻿@page "/admin/customers"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Services.Interfaces
+@using DreysFashion.web.ViewModels
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ICustomerService CustomerService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Customers | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
+
+        <div>
+            <p class="eyebrow text-muted">
+                DREY'S FASHION
+            </p>
+
+            <h1 class="h3 mb-1">
+                Customers
+            </h1>
+
+            <p class="text-muted mb-0">
+                View registered customers and their order information.
+            </p>
+        </div>
+
+        <div class="admin-toolbar">
+
+            <a href="/admin"
+               class="btn btn-outline-secondary btn-sm">
+
+                <i class="fas fa-arrow-left me-2"></i>
+
+                Dashboard
+
+            </a>
+
+        </div>
+
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center py-5">
+
+            <div class="spinner-border text-primary"
+                 role="status">
+
+                <span class="visually-hidden">
+                    Loading...
+                </span>
+
+            </div>
+
+            <p class="text-muted mt-3">
+                Loading customers...
+            </p>
+
+        </div>
+    }
+    else if (!customers.Any())
+    {
+        <div class="d-flex align-items-center justify-content-center py-5">
+
+            <div class="card text-center p-4">
+
+                <div class="card-body">
+
+                    <i class="fas fa-users fa-2x text-muted mb-3"></i>
+
+                    <h5 class="card-title">
+                        No Customers Yet
+                    </h5>
+
+                    <p class="card-text text-muted">
+                        Registered customers will appear here.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+    }
+    else
+    {
+        <div class="admin-product-table table-responsive">
+
+            <table class="table table-hover align-middle">
+
+                <thead class="table-light">
+
+                    <tr>
+
+                        <th>
+                            Customer
+                        </th>
+
+                        <th>
+                            Email
+                        </th>
+
+                        <th>
+                            Phone
+                        </th>
+
+                        <th>
+                            Orders
+                        </th>
+
+                        <th>
+                            Total Spent
+                        </th>
+
+                        <th>
+                            Registered
+                        </th>
+
+                        <th class="text-end">
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @foreach (var customer in customers)
+                    {
+                        <tr>
+
+                            <td>
+
+                                <div class="d-flex align-items-center gap-3">
+
+                                    <div class="customer-avatar">
+
+                                        <i class="fas fa-user"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <div class="fw-semibold">
+                                            @customer.FullName
+                                        </div>
+
+                                        <div class="text-muted small">
+                                            ID: @customer.Id
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </td>
+
+                            <td>
+                                @customer.Email
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(customer.PhoneNumber)
+                                    ? "Not provided"
+                                    : customer.PhoneNumber)
+                            </td>
+
+                            <td>
+
+                                <span class="badge bg-primary">
+                                    @customer.OrderCount
+                                </span>
+
+                            </td>
+
+                            <td>
+                                ₦@customer.TotalSpent.ToString("N0")
+                            </td>
+
+                            <td>
+                                @customer.CreatedAt
+                                .ToLocalTime()
+                                .ToString("dd MMM yyyy")
+                            </td>
+
+                            <td class="text-end">
+
+                                <button class="btn btn-sm btn-outline-primary"
+                                        @onclick="() => ViewCustomer(customer.Id)">
+
+                                    <i class="fas fa-eye me-1"></i>
+
+                                    View
+
+                                </button>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">
+            @errorMessage
+        </div>
+    }
+
+</div>
+
+@code {
+
+    private List<CustomerViewModel> customers = new();
+
+    private bool loading = true;
+
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomers();
+    }
+
+    private async Task LoadCustomers()
+    {
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            customers =
+                await CustomerService.GetAllCustomersAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load customers: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ViewCustomer(string customerId)
+    {
+        NavigationManager.NavigateTo(
+            $"/admin/customers/{customerId}");
+    }
+}

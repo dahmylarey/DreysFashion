@@ -1,42 +1,543 @@
 ﻿@page "/custom-tailoring"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using DreysFashion.web.Data
+
+@attribute [Authorize]
+
+@inject IMeasurementService MeasurementService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject ITailoringService TailoringService
+
 
 <PageTitle>Custom Tailoring | Drey's Fashion</PageTitle>
 
 <div class="page-container">
 
     <div class="page-header">
-        <p class="eyebrow">CUSTOM TAILORING</p>
 
-        <h1>Made Specifically For You.</h1>
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Custom Tailoring
+        </h1>
 
         <p>
-            Tell us what you want and we'll help bring your design to life.
+            Tell us what you want and we'll create it specifically for you.
         </p>
-    </div>
-
-    <div class="tailoring-options">
-
-        <div class="tailoring-card">
-            <h3>Choose Your Style</h3>
-            <p>
-                Select from our existing designs or submit your own inspiration.
-            </p>
-        </div>
-
-        <div class="tailoring-card">
-            <h3>Your Measurements</h3>
-            <p>
-                Save your measurements so future orders become easier.
-            </p>
-        </div>
-
-        <div class="tailoring-card">
-            <h3>Track Your Order</h3>
-            <p>
-                Follow your outfit from cutting through sewing and finishing.
-            </p>
-        </div>
 
     </div>
+
+    @if (isLoading)
+    {
+        <div class="page-header">
+            <p>Loading your tailoring form...</p>
+        </div>
+    }
+    else
+    {
+        <div class="checkout-container">
+
+            <!-- ================================================= -->
+            <!-- TAILORING FORM -->
+            <!-- ================================================= -->
+
+            <div class="checkout-form">
+
+                <h2>
+                    Tell Us About Your Outfit
+                </h2>
+
+                <EditForm Model="request"
+                          OnValidSubmit="SubmitRequest">
+
+                    <DataAnnotationsValidator />
+
+                    <ValidationSummary />
+
+                    @if (!string.IsNullOrWhiteSpace(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            @errorMessage
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(successMessage))
+                    {
+                        <div class="alert alert-success">
+                            @successMessage
+                        </div>
+                    }
+
+                    <!-- Outfit Type -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Outfit Type
+                        </label>
+
+                        <InputSelect class="form-control"
+                                     @bind-Value="request.OutfitType">
+
+                            <option value="">
+                                Select outfit type
+                            </option>
+
+                            <option value="Agbada">
+                                Agbada
+                            </option>
+
+                            <option value="Native">
+                                Native
+                            </option>
+
+                            <option value="Senator">
+                                Senator
+                            </option>
+
+                            <option value="Kaftan">
+                                Kaftan
+                            </option>
+
+                            <option value="Shirt">
+                                Shirt
+                            </option>
+
+                            <option value="Trousers">
+                                Trousers
+                            </option>
+
+                            <option value="Native Set">
+                                Native Set
+                            </option>
+
+                            <option value="Other">
+                                Other
+                            </option>
+
+                        </InputSelect>
+
+                    </div>
+
+                    <!-- Style Description -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Describe Your Style
+                        </label>
+
+                        <InputTextArea class="form-control"
+                                       rows="5"
+                                       @bind-Value="request.StyleDescription" />
+
+                        <small>
+                            Describe the design, colour combination,
+                            embroidery, fitting, or anything else you want.
+                        </small>
+
+                    </div>
+
+                    <!-- Fabric -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Fabric Preference
+                        </label>
+
+                        <InputText class="form-control"
+                                   @bind-Value="request.FabricPreference" />
+
+                        <small>
+                            Example: Senator material, linen, cotton,
+                            brocade, velvet, etc.
+                        </small>
+
+                    </div>
+
+                    <!-- Additional Instructions -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Additional Instructions
+                        </label>
+
+                        <InputTextArea class="form-control"
+                                       rows="4"
+                                       @bind-Value="request.AdditionalInstructions" />
+
+                    </div>
+
+                    <!-- Submit -->
+
+                    <button type="submit"
+                            class="checkout-button"
+                            disabled="@isSubmitting">
+
+                        @if (isSubmitting)
+                        {
+                            <span>
+                                Submitting Request...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Submit Tailoring Request
+                            </span>
+                        }
+
+                    </button>
+
+                </EditForm>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- MEASUREMENT SUMMARY -->
+            <!-- ================================================= -->
+
+            <aside class="checkout-summary">
+
+                <h2>
+                    Your Measurements
+                </h2>
+
+                @if (measurement == null)
+                {
+                    <p>
+                        You haven't saved your measurements yet.
+                    </p>
+
+                    <a href="/my-measurements"
+                       class="add-cart">
+
+                        Add Measurements
+                    </a>
+                }
+                else
+                {
+                    <p>
+                        Unit:
+                        <strong>
+                            @measurement.MeasurementUnit
+                        </strong>
+                    </p>
+
+                    <hr />
+
+                    <div class="measurement-summary">
+
+                        <div>
+                            <span>Chest</span>
+                            <strong>@DisplayMeasurement(measurement.Chest)</strong>
+                        </div>
+
+                        <div>
+                            <span>Waist</span>
+                            <strong>@DisplayMeasurement(measurement.Waist)</strong>
+                        </div>
+
+                        <div>
+                            <span>Hip</span>
+                            <strong>@DisplayMeasurement(measurement.Hip)</strong>
+                        </div>
+
+                        <div>
+                            <span>Shoulder</span>
+                            <strong>@DisplayMeasurement(measurement.Shoulder)</strong>
+                        </div>
+
+                        <div>
+                            <span>Sleeve</span>
+                            <strong>@DisplayMeasurement(measurement.SleeveLength)</strong>
+                        </div>
+
+                        <div>
+                            <span>Top Length</span>
+                            <strong>@DisplayMeasurement(measurement.TopLength)</strong>
+                        </div>
+
+                        <div>
+                            <span>Trouser Waist</span>
+                            <strong>@DisplayMeasurement(measurement.TrouserWaist)</strong>
+                        </div>
+
+                        <div>
+                            <span>Trouser Length</span>
+                            <strong>@DisplayMeasurement(measurement.TrouserLength)</strong>
+                        </div>
+
+                        <div>
+                            <span>Thigh</span>
+                            <strong>@DisplayMeasurement(measurement.Thigh)</strong>
+                        </div>
+
+                        <div>
+                            <span>Knee</span>
+                            <strong>@DisplayMeasurement(measurement.Knee)</strong>
+                        </div>
+
+                        <div>
+                            <span>Ankle</span>
+                            <strong>@DisplayMeasurement(measurement.Ankle)</strong>
+                        </div>
+
+                    </div>
+
+                    <hr />
+
+                    <a href="/my-measurements"
+                       class="add-cart">
+
+                        Update Measurements
+                    </a>
+                }
+
+            </aside>
+
+        </div>
+    }
 
 </div>
+
+@code {
+
+    private TailoringRequest request = new();
+
+    private MeasurementProfile? measurement;
+
+    private bool isLoading = true;
+
+    private bool isSubmitting;
+
+    private string? errorMessage;
+
+    private string? successMessage;
+
+
+    /// <summary>
+    /// Loads the authenticated customer's saved measurements.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine your account.";
+
+                return;
+            }
+
+            measurement =
+                await MeasurementService
+                    .GetByUserIdAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load your measurements: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Submits a new custom tailoring request.
+    /// </summary>
+    private async Task SubmitRequest()
+    {
+        if (isSubmitting)
+        {
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+
+            errorMessage = null;
+            successMessage = null;
+
+            // -----------------------------------------------
+            // Get authenticated user.
+            // -----------------------------------------------
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "You must be signed in to submit a tailoring request.";
+
+                return;
+            }
+
+            // -----------------------------------------------
+            // Validate outfit type.
+            // -----------------------------------------------
+
+            if (string.IsNullOrWhiteSpace(request.OutfitType))
+            {
+                errorMessage =
+                    "Please select an outfit type.";
+
+                return;
+            }
+
+            // -----------------------------------------------
+            // Validate style description.
+            // -----------------------------------------------
+
+            if (string.IsNullOrWhiteSpace(request.StyleDescription))
+            {
+                errorMessage =
+                    "Please describe the style you want.";
+
+                return;
+            }
+
+            // -----------------------------------------------
+            // Reload measurements directly from the database.
+            //
+            // This prevents using stale information from the UI.
+            // -----------------------------------------------
+
+            var savedMeasurement =
+                await MeasurementService
+                    .GetByUserIdAsync(userId);
+
+            if (savedMeasurement == null)
+            {
+                errorMessage =
+                    "Please save your measurements before submitting " +
+                    "a custom tailoring request.";
+
+                return;
+            }
+
+            // -----------------------------------------------
+            // Copy measurements into the tailoring request.
+            //
+            // IMPORTANT:
+            // These become a snapshot for this specific order.
+            // -----------------------------------------------
+
+            request.UserId = userId;
+
+            request.Chest =
+                savedMeasurement.Chest;
+
+            request.Waist =
+                savedMeasurement.Waist;
+
+            request.Hip =
+                savedMeasurement.Hip;
+
+            request.Shoulder =
+                savedMeasurement.Shoulder;
+
+            request.SleeveLength =
+                savedMeasurement.SleeveLength;
+
+            request.TopLength =
+                savedMeasurement.TopLength;
+
+            request.TrouserWaist =
+                savedMeasurement.TrouserWaist;
+
+            request.TrouserLength =
+                savedMeasurement.TrouserLength;
+
+            request.Thigh =
+                savedMeasurement.Thigh;
+
+            request.Knee =
+                savedMeasurement.Knee;
+
+            request.Ankle =
+                savedMeasurement.Ankle;
+
+            request.MeasurementUnit =
+                savedMeasurement.MeasurementUnit;
+
+            request.Status = "Pending";
+
+            request.CreatedAt = DateTime.UtcNow;
+
+            // -----------------------------------------------
+            // Save request.
+            // -----------------------------------------------
+
+            request =
+    await TailoringService.CreateRequestAsync(request);
+
+            successMessage =
+                "Your tailoring request has been submitted successfully.";
+
+            // -----------------------------------------------
+            // Reset the form.
+            // -----------------------------------------------
+
+            request = new TailoringRequest();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to submit your tailoring request: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Formats a measurement for display.
+    /// </summary>
+    private string DisplayMeasurement(decimal? value)
+    {
+        if (!value.HasValue)
+        {
+            return "Not provided";
+        }
+
+        return value.Value.ToString("0.##");
+    }
+}

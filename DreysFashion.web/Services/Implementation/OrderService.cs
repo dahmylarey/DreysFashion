@@ -14,34 +14,23 @@ namespace DreysFashion.web.Services
         private readonly ApplicationDbContext _context;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="OrderService"/> class.
+        /// Initializes a new instance of the
+        /// <see cref="OrderService"/> class.
         /// </summary>
-        /// <param name="context">
-        /// The application's database context.
-        /// </param>
         public OrderService(ApplicationDbContext context)
         {
             _context = context;
         }
 
 
-        //Create order from checkout and cart items
+        // ============================================================
+        // CREATE ORDER
+        // ============================================================
+
         /// <summary>
         /// Creates a new order for the authenticated customer
         /// using the customer's checkout information and cart items.
         /// </summary>
-        /// <param name="userId">
-        /// The Identity ID of the authenticated customer.
-        /// </param>
-        /// <param name="checkout">
-        /// The customer's checkout information.
-        /// </param>
-        /// <param name="cartItems">
-        /// The items currently in the shopping cart.
-        /// </param>
-        /// <returns>
-        /// The identifier of the newly created order.
-        /// </returns>
         public async Task<int> CreateOrderAsync(
             string userId,
             CheckoutViewModel checkout,
@@ -59,7 +48,46 @@ namespace DreysFashion.web.Services
                     "Cannot create an order with an empty cart.");
             }
 
+            // --------------------------------------------------------
+            // Validate every cart item before creating the order.
+            // --------------------------------------------------------
+
+            foreach (var cartItem in cartItems)
+            {
+                if (cartItem.Quantity <= 0)
+                {
+                    throw new InvalidOperationException(
+                        $"Invalid quantity for product {cartItem.ProductId}.");
+                }
+
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(product =>
+                        product.Id == cartItem.ProductId);
+
+                if (product == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Product with ID {cartItem.ProductId} no longer exists.");
+                }
+
+                if (!product.IsAvailable)
+                {
+                    throw new InvalidOperationException(
+                        $"'{product.Name}' is currently unavailable.");
+                }
+
+                if (product.StockQuantity < cartItem.Quantity)
+                {
+                    throw new InvalidOperationException(
+                        $"Not enough stock for '{product.Name}'. " +
+                        $"Only {product.StockQuantity} unit(s) available.");
+                }
+            }
+
+            // --------------------------------------------------------
             // Create the order.
+            // --------------------------------------------------------
+
             var order = new Order
             {
                 UserId = userId,
@@ -73,34 +101,37 @@ namespace DreysFashion.web.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            // Calculate the order total.
-            order.TotalAmount = cartItems.Sum(
-                item => item.UnitPrice * item.Quantity);
+            // --------------------------------------------------------
+            // Calculate the order total using the CURRENT
+            // product prices from the database.
+            // --------------------------------------------------------
 
-            // Create order items.
             foreach (var cartItem in cartItems)
             {
-                var productExists = await _context.Products
-                    .AnyAsync(product =>
+                var product = await _context.Products
+                    .FirstAsync(product =>
                         product.Id == cartItem.ProductId);
 
-                if (!productExists)
-                {
-                    throw new InvalidOperationException(
-                        $"Product with ID {cartItem.ProductId} no longer exists.");
-                }
+                order.TotalAmount +=
+                    product.Price * cartItem.Quantity;
 
                 var orderItem = new OrderItem
                 {
-                    ProductId = cartItem.ProductId,
+                    ProductId = product.Id,
                     Quantity = cartItem.Quantity,
-                    UnitPrice = cartItem.UnitPrice
+
+                    // Store the actual database price
+                    // at the time of purchase.
+                    UnitPrice = product.Price
                 };
 
                 order.OrderItems.Add(orderItem);
             }
 
+            // --------------------------------------------------------
             // Add the complete order to the database.
+            // --------------------------------------------------------
+
             _context.Orders.Add(order);
 
             await _context.SaveChangesAsync();
@@ -109,38 +140,31 @@ namespace DreysFashion.web.Services
         }
 
 
-        //Get order by ID
+        // ============================================================
+        // GET ORDER BY ID
+        // ============================================================
+
         /// <summary>
-        /// Retrieves an order together with its order items and products.
+        /// Retrieves an order together with its products.
         /// </summary>
-        /// <param name="orderId">
-        /// The unique identifier of the order.
-        /// </param>
-        /// <returns>
-        /// The requested order if it exists; otherwise, null.
-        /// </returns>
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
             return await _context.Orders
                 .Include(order => order.OrderItems)
                 .ThenInclude(item => item.Product)
-                .FirstOrDefaultAsync(order => order.Id == orderId);
+                .FirstOrDefaultAsync(order =>
+                    order.Id == orderId);
         }
 
+
+        // ============================================================
+        // GET ORDER BY ID FOR USER
+        // ============================================================
+
         /// <summary>
-        /// Retrieves an order only when it belongs to the specified
-        /// authenticated customer.
+        /// Retrieves an order only when it belongs to
+        /// the specified authenticated customer.
         /// </summary>
-        /// <param name="orderId">
-        /// The unique identifier of the order.
-        /// </param>
-        /// <param name="userId">
-        /// The Identity ID of the authenticated customer.
-        /// </param>
-        /// <returns>
-        /// The order if it belongs to the specified user;
-        /// otherwise, null.
-        /// </returns>
         public async Task<Order?> GetOrderByIdForUserAsync(
             int orderId,
             string userId)
@@ -158,31 +182,21 @@ namespace DreysFashion.web.Services
                     order.UserId == userId);
         }
 
-        //Set payment reference for an order
+
+        // ============================================================
+        // SET PAYMENT REFERENCE
+        // ============================================================
+
         /// <summary>
-        /// Associates a Paystack payment reference with an existing order.
+        /// Associates a Paystack payment reference with an order.
         /// </summary>
-        /// <param name="orderId">
-        /// The unique identifier of the order.
-        /// </param>
-        /// <param name="paymentReference">
-        /// The Paystack transaction reference.
-        /// </param>
-        /// <summary>
-        /// Associates a Paystack payment reference with an existing order.
-        /// </summary>
-        /// <param name="orderId">
-        /// The unique identifier of the order.
-        /// </param>
-        /// <param name="paymentReference">
-        /// The Paystack transaction reference.
-        /// </param>
         public async Task SetPaymentReferenceAsync(
             int orderId,
             string paymentReference)
         {
             var order = await _context.Orders
-                .FirstOrDefaultAsync(order => order.Id == orderId);
+                .FirstOrDefaultAsync(order =>
+                    order.Id == orderId);
 
             if (order == null)
             {
@@ -196,17 +210,29 @@ namespace DreysFashion.web.Services
         }
 
 
-        //mark order as paid
+        // ============================================================
+        // MARK ORDER AS PAID + DEDUCT STOCK
+        // ============================================================
+
         /// <summary>
-        /// Marks an order as paid.
+        /// Marks an order as paid and deducts the purchased quantities
+        /// from product inventory.
+        ///
+        /// If the order has already been paid, no changes are made.
+        /// This prevents stock from being deducted more than once.
         /// </summary>
-        /// <param name="orderId">
-        /// The unique identifier of the order.
-        /// </param>
         public async Task MarkOrderAsPaidAsync(int orderId)
         {
+            // --------------------------------------------------------
+            // Load the order together with its order items
+            // and their associated products.
+            // --------------------------------------------------------
+
             var order = await _context.Orders
-                .FirstOrDefaultAsync(order => order.Id == orderId);
+                .Include(order => order.OrderItems)
+                .ThenInclude(item => item.Product)
+                .FirstOrDefaultAsync(order =>
+                    order.Id == orderId);
 
             if (order == null)
             {
@@ -214,63 +240,128 @@ namespace DreysFashion.web.Services
                     $"Order with ID {orderId} was not found.");
             }
 
+            // --------------------------------------------------------
+            // IMPORTANT:
+            // If the order is already paid, do nothing.
+            //
+            // This prevents stock from being deducted twice if
+            // Paystack verification happens more than once.
+            // --------------------------------------------------------
+
+            if (string.Equals(
+                    order.Status,
+                    "Paid",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            // --------------------------------------------------------
+            // Validate ALL stock before changing ANY stock.
+            // --------------------------------------------------------
+
+            foreach (var orderItem in order.OrderItems)
+            {
+                var product = orderItem.Product;
+
+                if (product == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Product for order item {orderItem.Id} could not be found.");
+                }
+
+                if (!product.IsAvailable)
+                {
+                    throw new InvalidOperationException(
+                        $"'{product.Name}' is no longer available.");
+                }
+
+                if (product.StockQuantity < orderItem.Quantity)
+                {
+                    throw new InvalidOperationException(
+                        $"Not enough stock for '{product.Name}'. " +
+                        $"Only {product.StockQuantity} unit(s) remain.");
+                }
+            }
+
+            // --------------------------------------------------------
+            // All stock is available.
+            // Deduct the purchased quantities.
+            // --------------------------------------------------------
+
+            foreach (var orderItem in order.OrderItems)
+            {
+                var product = orderItem.Product;
+
+                product.StockQuantity -= orderItem.Quantity;
+
+                // Automatically disable the product when
+                // no units remain.
+                if (product.StockQuantity <= 0)
+                {
+                    product.StockQuantity = 1;
+                    product.IsAvailable = false;
+                }
+            }
+
+            // --------------------------------------------------------
+            // Mark the order as paid.
+            // --------------------------------------------------------
+
             order.Status = "Paid";
+
+            // --------------------------------------------------------
+            // Save BOTH the stock changes and the order status.
+            // --------------------------------------------------------
 
             await _context.SaveChangesAsync();
         }
 
 
-        //mark order as shipped
-        //// <summary>
+        // ============================================================
+        // GET ORDER BY PAYMENT REFERENCE
+        // ============================================================
+
+        /// <summary>
         /// Retrieves an order using its Paystack payment reference.
         /// </summary>
-        /// <param name="paymentReference">
-        /// The Paystack transaction reference.
-        /// </param>
-        /// <returns>
-        /// The matching order if found; otherwise, null.
-        /// </returns>
         public async Task<Order?> GetOrderByPaymentReferenceAsync(
             string paymentReference)
         {
             return await _context.Orders
                 .Include(order => order.OrderItems)
                 .ThenInclude(item => item.Product)
-                .FirstOrDefaultAsync(
-                    order => order.PaymentReference == paymentReference);
+                .FirstOrDefaultAsync(order =>
+                    order.PaymentReference == paymentReference);
         }
 
-        //Get all orders by customer email
+
+        // ============================================================
+        // GET ORDERS BY CUSTOMER EMAIL
+        // ============================================================
+
         /// <summary>
-        /// Retrieves all orders associated with a customer's email address.
+        /// Retrieves all orders associated with a customer's email.
         /// </summary>
-        /// <param name="email">
-        /// The customer's email address.
-        /// </param>
-        /// <returns>
-        /// A list of the customer's orders, newest first.
-        /// </returns>
         public async Task<List<Order>> GetOrdersByCustomerEmailAsync(
             string email)
         {
             return await _context.Orders
-                .Where(order => order.CustomerEmail == email)
-                .OrderByDescending(order => order.CreatedAt)
+                .Where(order =>
+                    order.CustomerEmail == email)
+                .OrderByDescending(order =>
+                    order.CreatedAt)
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Retrieves all orders belonging to a specific authenticated customer.
-        /// </summary>
-        /// <param name="userId">
-        /// The Identity ID of the authenticated customer.
-        /// </param>
-        /// <returns>
-        /// A list of the customer's orders, newest first.
-        /// </returns>
-        /// 
 
-        //Get Orders By UserId
+        // ============================================================
+        // GET ORDERS BY USER ID
+        // ============================================================
+
+        /// <summary>
+        /// Retrieves all orders belonging to a specific authenticated user.
+        /// </summary>
         public async Task<List<Order>> GetOrdersByUserIdAsync(
             string userId)
         {
@@ -280,12 +371,18 @@ namespace DreysFashion.web.Services
             }
 
             return await _context.Orders
-                .Where(order => order.UserId == userId)
-                .OrderByDescending(order => order.CreatedAt)
+                .Where(order =>
+                    order.UserId == userId)
+                .OrderByDescending(order =>
+                    order.CreatedAt)
                 .ToListAsync();
         }
 
-        // Get all orders for admin
+
+        // ============================================================
+        // GET ALL ORDERS
+        // ============================================================
+
         /// <summary>
         /// Retrieves all orders in the system.
         /// </summary>
@@ -294,12 +391,16 @@ namespace DreysFashion.web.Services
             return await _context.Orders
                 .Include(order => order.OrderItems)
                 .ThenInclude(item => item.Product)
-                .OrderByDescending(order => order.CreatedAt)
+                .OrderByDescending(order =>
+                    order.CreatedAt)
                 .ToListAsync();
         }
 
 
-        // Update order status
+        // ============================================================
+        // UPDATE ORDER STATUS
+        // ============================================================
+
         /// <summary>
         /// Updates the status of an existing order.
         /// </summary>
@@ -308,7 +409,8 @@ namespace DreysFashion.web.Services
             string status)
         {
             var order = await _context.Orders
-                .FirstOrDefaultAsync(order => order.Id == orderId);
+                .FirstOrDefaultAsync(order =>
+                    order.Id == orderId);
 
             if (order == null)
             {
@@ -321,7 +423,5 @@ namespace DreysFashion.web.Services
 
             return true;
         }
-
-
     }
 }

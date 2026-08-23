@@ -6,7 +6,8 @@ namespace DreysFashion.web.Data
 {
     /// <summary>
     /// Represents the application's database context.
-    /// Handles products, orders, order items, and ASP.NET Core Identity.
+    /// Handles products, orders, order items, custom tailoring,
+    /// measurements, and ASP.NET Core Identity.
     /// </summary>
     public class ApplicationDbContext
         : IdentityDbContext<ApplicationUser>
@@ -15,9 +16,6 @@ namespace DreysFashion.web.Data
         /// Initializes a new instance of the
         /// <see cref="ApplicationDbContext"/> class.
         /// </summary>
-        /// <param name="options">
-        /// The database context options.
-        /// </param>
         public ApplicationDbContext(
             DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -40,41 +38,62 @@ namespace DreysFashion.web.Data
         public DbSet<OrderItem> OrderItems { get; set; }
 
         /// <summary>
+        /// Gets or sets the reusable customer measurement profiles.
+        /// </summary>
+        public DbSet<MeasurementProfile> MeasurementProfiles { get; set; }
+
+        /// <summary>
+        /// Gets or sets customer custom tailoring requests.
+        /// </summary>
+        public DbSet<TailoringRequest> TailoringRequests { get; set; }
+
+        /// <summary>
         /// Configures the application's database relationships,
         /// precision settings, and Identity models.
         /// </summary>
-        /// <param name="modelBuilder">
-        /// The model builder used to configure the database model.
-        /// </param>
         protected override void OnModelCreating(
             ModelBuilder modelBuilder)
         {
             // Apply ASP.NET Core Identity configuration first.
             base.OnModelCreating(modelBuilder);
 
-            // Configure Product price.
+            // ========================================================
+            // PRODUCT
+            // ========================================================
+
             modelBuilder.Entity<Product>()
                 .Property(product => product.Price)
                 .HasPrecision(18, 2);
 
-            // Configure Order total amount.
+
+            // ========================================================
+            // ORDER
+            // ========================================================
+
             modelBuilder.Entity<Order>()
                 .Property(order => order.TotalAmount)
                 .HasPrecision(18, 2);
 
-            // Configure OrderItem unit price.
             modelBuilder.Entity<OrderItem>()
                 .Property(item => item.UnitPrice)
                 .HasPrecision(18, 2);
 
-            // Configure Order -> OrderItems relationship.
+
+            // ========================================================
+            // ORDER -> ORDER ITEMS
+            // ========================================================
+
             modelBuilder.Entity<OrderItem>()
                 .HasOne(item => item.Order)
                 .WithMany(order => order.OrderItems)
                 .HasForeignKey(item => item.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Configure OrderItem -> Product relationship.
+
+            // ========================================================
+            // ORDER ITEM -> PRODUCT
+            // ========================================================
+
             modelBuilder.Entity<OrderItem>()
                 .HasOne(item => item.Product)
                 .WithMany()
@@ -82,12 +101,142 @@ namespace DreysFashion.web.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
 
-            // Configure Order -> User relationship.
+            // ========================================================
+            // ORDER -> USER
+            // ========================================================
+
             modelBuilder.Entity<Order>()
-    .HasOne(order => order.User)
-    .WithMany()
-    .HasForeignKey(order => order.UserId)
-    .OnDelete(DeleteBehavior.Restrict);
+                .HasOne(order => order.User)
+                .WithMany()
+                .HasForeignKey(order => order.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+
+            // ========================================================
+            // MEASUREMENT PROFILE
+            // ========================================================
+
+            // Configure measurement precision.
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Chest)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Waist)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Hip)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Shoulder)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.SleeveLength)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.TopLength)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.TrouserWaist)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.TrouserLength)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Thigh)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Knee)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .Property(measurement => measurement.Ankle)
+                .HasPrecision(8, 2);
+
+
+            // ========================================================
+            // MEASUREMENT PROFILE -> USER
+            // ========================================================
+
+            modelBuilder.Entity<MeasurementProfile>()
+                .HasOne(measurement => measurement.User)
+                .WithMany()
+                .HasForeignKey(measurement => measurement.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+
+            // ========================================================
+            // TAILORING REQUEST
+            // ========================================================
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.QuotedAmount)
+                .HasPrecision(18, 2);
+
+
+            // Configure tailoring measurement precision.
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Chest)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Waist)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Hip)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Shoulder)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.SleeveLength)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.TopLength)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.TrouserWaist)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.TrouserLength)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Thigh)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Knee)
+                .HasPrecision(8, 2);
+
+            modelBuilder.Entity<TailoringRequest>()
+                .Property(request => request.Ankle)
+                .HasPrecision(8, 2);
+
+
+            // ========================================================
+            // TAILORING REQUEST -> USER
+            // ========================================================
+
+            modelBuilder.Entity<TailoringRequest>()
+                .HasOne(request => request.User)
+                .WithMany()
+                .HasForeignKey(request => request.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

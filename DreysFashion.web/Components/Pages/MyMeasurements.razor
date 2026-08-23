@@ -1,0 +1,420 @@
+﻿@page "/my-measurements"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]
+
+@inject IMeasurementService MeasurementService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<PageTitle>My Measurements | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            My Measurements
+        </h1>
+
+        <p>
+            Save your measurements once and use them for your
+            future custom tailoring orders.
+        </p>
+
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="page-header">
+            <p>Loading your measurements...</p>
+        </div>
+    }
+    else
+    {
+        <div class="measurement-container">
+
+            <EditForm Model="measurement"
+                      OnValidSubmit="SaveMeasurements">
+
+                <DataAnnotationsValidator />
+
+                <ValidationSummary />
+
+                @if (!string.IsNullOrWhiteSpace(successMessage))
+                {
+                    <div class="alert alert-success">
+                        @successMessage
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    <div class="alert alert-danger">
+                        @errorMessage
+                    </div>
+                }
+
+                <!-- Measurement Unit -->
+
+                <div class="form-group">
+
+                    <label for="measurementUnit">
+                        Measurement Unit
+                    </label>
+
+                    <select id="measurementUnit"
+                            class="form-control"
+                            @bind="measurement.MeasurementUnit">
+
+                        <option value="inches">
+                            Inches
+                        </option>
+
+                        <option value="centimeters">
+                            Centimeters
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <hr />
+
+                <h2>
+                    Upper Body
+                </h2>
+
+                <div class="measurement-grid">
+
+                    <!-- Chest -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Chest
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Chest" />
+
+                    </div>
+
+                    <!-- Waist -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Waist
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Waist" />
+
+                    </div>
+
+                    <!-- Hip -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Hip
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Hip" />
+
+                    </div>
+
+                    <!-- Shoulder -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Shoulder
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Shoulder" />
+
+                    </div>
+
+                    <!-- Sleeve -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Sleeve Length
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.SleeveLength" />
+
+                    </div>
+
+                    <!-- Top Length -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Top Length
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.TopLength" />
+
+                    </div>
+
+                </div>
+
+                <hr />
+
+                <h2>
+                    Trouser Measurements
+                </h2>
+
+                <div class="measurement-grid">
+
+                    <!-- Trouser Waist -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Trouser Waist
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.TrouserWaist" />
+
+                    </div>
+
+                    <!-- Trouser Length -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Trouser Length
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.TrouserLength" />
+
+                    </div>
+
+                    <!-- Thigh -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Thigh
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Thigh" />
+
+                    </div>
+
+                    <!-- Knee -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Knee
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Knee" />
+
+                    </div>
+
+                    <!-- Ankle -->
+
+                    <div class="form-group">
+
+                        <label>
+                            Ankle
+                        </label>
+
+                        <InputNumber TValue="decimal?"
+                                     class="form-control"
+                                     @bind-Value="measurement.Ankle" />
+
+                    </div>
+
+                </div>
+
+                <div class="measurement-actions">
+
+                    <button type="submit"
+                            class="checkout-button"
+                            disabled="@isSaving">
+
+                        @if (isSaving)
+                        {
+                            <span>
+                                Saving...
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                Save Measurements
+                            </span>
+                        }
+
+                    </button>
+
+                </div>
+
+            </EditForm>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the customer's measurement profile.
+    /// </summary>
+    private MeasurementProfile measurement = new();
+
+    /// <summary>
+    /// Indicates whether the page is loading.
+    /// </summary>
+    private bool isLoading = true;
+
+    /// <summary>
+    /// Indicates whether the measurements are currently being saved.
+    /// </summary>
+    private bool isSaving;
+
+    /// <summary>
+    /// Stores a successful save message.
+    /// </summary>
+    private string? successMessage;
+
+    /// <summary>
+    /// Stores an error message.
+    /// </summary>
+    private string? errorMessage;
+
+    /// <summary>
+    /// Loads the customer's saved measurements.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine your account.";
+
+                return;
+            }
+
+            var existingMeasurement =
+                await MeasurementService
+                    .GetByUserIdAsync(userId);
+
+            if (existingMeasurement != null)
+            {
+                measurement = existingMeasurement;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load your measurements: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Saves the customer's measurement profile.
+    /// </summary>
+    private async Task SaveMeasurements()
+    {
+        if (isSaving)
+        {
+            return;
+        }
+
+        try
+        {
+            isSaving = true;
+
+            successMessage = null;
+            errorMessage = null;
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine your account.";
+
+                return;
+            }
+
+            measurement =
+                await MeasurementService.SaveAsync(
+                    userId,
+                    measurement);
+
+            successMessage =
+                "Your measurements have been saved successfully.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to save your measurements: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

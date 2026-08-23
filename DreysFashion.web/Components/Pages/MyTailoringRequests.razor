@@ -1,0 +1,314 @@
+﻿@page "/my-tailoring-requests"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]
+
+@inject ITailoringService TailoringService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>My Tailoring Requests | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            My Tailoring Requests
+        </h1>
+
+        <p>
+            Track your custom tailoring requests,
+            quotes and progress.
+        </p>
+
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="page-header">
+            <p>
+                Loading your tailoring requests...
+            </p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+    else if (requests.Count == 0)
+    {
+        <div class="page-header">
+
+            <h2>
+                No Tailoring Requests Yet
+            </h2>
+
+            <p>
+                You haven't submitted a custom tailoring request.
+            </p>
+
+            <a href="/custom-tailoring"
+               class="add-cart">
+
+                Create Tailoring Request
+
+            </a>
+
+        </div>
+    }
+    else
+    {
+        <div class="tailoring-request-list">
+
+            @foreach (var request in requests)
+            {
+                <div class="tailoring-request-card">
+
+                    <div class="tailoring-request-header">
+
+                        <div>
+
+                            <p class="eyebrow">
+                                REQUEST #@request.Id
+                            </p>
+
+                            <h2>
+                                @request.OutfitType
+                            </h2>
+
+                        </div>
+
+                        <span class="@GetStatusClass(request.Status)">
+                            @request.Status
+                        </span>
+
+                    </div>
+
+                    <div class="tailoring-request-details">
+
+                        <div>
+                            <span>
+                                Submitted
+                            </span>
+
+                            <strong>
+                                @request.CreatedAt.ToLocalTime()
+                                .ToString("dd MMM yyyy, hh:mm tt")
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>
+                                Measurement Unit
+                            </span>
+
+                            <strong>
+                                @request.MeasurementUnit
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>
+                                Quoted Amount
+                            </span>
+
+                            <strong>
+                                @DisplayQuote(request.QuotedAmount)
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <hr />
+
+                    <div class="tailoring-request-description">
+
+                        <h3>
+                            Style
+                        </h3>
+
+                        <p>
+                            @request.StyleDescription
+                        </p>
+
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(request.FabricPreference))
+                    {
+                        <div class="tailoring-request-description">
+
+                            <h3>
+                                Fabric
+                            </h3>
+
+                            <p>
+                                @request.FabricPreference
+                            </p>
+
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(request.AdminNotes))
+                    {
+                        <div class="tailoring-admin-notes">
+
+                            <h3>
+                                Tailor's Notes
+                            </h3>
+
+                            <p>
+                                @request.AdminNotes
+                            </p>
+
+                        </div>
+                    }
+
+                    <div class="tailoring-request-actions">
+
+                        <a href="/tailoring-request/@request.Id"
+                           class="add-cart">
+
+                            View Request
+
+                        </a>
+
+                    </div><br />
+
+                </div>
+            }
+
+        </div>
+
+        <div class="confirmation-actions">
+
+            <a href="/custom-tailoring"
+               class="add-cart">
+
+                Create Another Request
+
+            </a>
+
+        </div>
+    }
+
+</div>
+
+@code {
+
+    /// <summary>
+    /// Stores the customer's tailoring requests.
+    /// </summary>
+    private List<TailoringRequest> requests = new();
+
+    /// <summary>
+    /// Indicates whether requests are currently loading.
+    /// </summary>
+    private bool isLoading = true;
+
+    /// <summary>
+    /// Stores any error that occurs while loading requests.
+    /// </summary>
+    private string? errorMessage;
+
+
+    /// <summary>
+    /// Loads the authenticated customer's tailoring requests.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine your account.";
+
+                return;
+            }
+
+            requests =
+                await TailoringService
+                    .GetRequestsByUserIdAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load your tailoring requests: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Displays a formatted quotation amount.
+    /// </summary>
+    private string DisplayQuote(decimal? amount)
+    {
+        if (!amount.HasValue)
+        {
+            return "Awaiting quote";
+        }
+
+        return $"₦{amount.Value:N0}";
+    }
+
+
+    /// <summary>
+    /// Returns the CSS class used to display a request status.
+    /// </summary>
+    private string GetStatusClass(string status)
+    {
+        return status?.ToLowerInvariant() switch
+        {
+            "pending" =>
+                "status-badge status-pending",
+
+            "quote provided" =>
+                "status-badge status-quote",
+
+            "approved" =>
+                "status-badge status-approved",
+
+            "in progress" =>
+                "status-badge status-progress",
+
+            "ready" =>
+                "status-badge status-ready",
+
+            "completed" =>
+                "status-badge status-completed",
+
+            "cancelled" =>
+                "status-badge status-cancelled",
+
+            _ =>
+                "status-badge"
+        };
+    }
+}

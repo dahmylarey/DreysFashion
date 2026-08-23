@@ -1,11 +1,12 @@
 using DreysFashion.web.Components;
 using DreysFashion.web.Data;
+using DreysFashion.web.Endpoints;
 using DreysFashion.web.Models;
 using DreysFashion.web.Services;
+using DreysFashion.web.Services.Implementation;
 using DreysFashion.web.Services.Interfaces;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
-using DreysFashion.web.Endpoints;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +33,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IMeasurementService, MeasurementService>();
+builder.Services.AddScoped<ITailoringService, TailoringService>();
 
 //builder.Services.AddScoped<HttpClient>();
 
