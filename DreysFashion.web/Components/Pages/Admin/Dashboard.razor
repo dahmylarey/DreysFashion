@@ -9,6 +9,7 @@
 
 @inject IProductService ProductService
 @inject IOrderService OrderService
+@inject ITailoringService TailoringService
 
 <PageTitle>Admin Dashboard | Drey's Fashion</PageTitle>
 
@@ -62,6 +63,14 @@
 
             </a>
 
+            <a href="/admin/tailoring"
+               class="btn btn-outline-secondary btn-sm">
+
+                <i class="fas fa-cut me-2"></i>
+                Manage Tailoring
+
+            </a>
+
         </div>
 
     </div>
@@ -78,7 +87,7 @@
 
             <!-- PRODUCTS -->
 
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6 col-xl-3">
 
                 <div class="card h-100">
 
@@ -115,7 +124,7 @@
 
             <!-- ORDERS -->
 
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6 col-xl-3">
 
                 <div class="card h-100">
 
@@ -152,7 +161,7 @@
 
             <!-- CUSTOMERS -->
 
-            <div class="col-12 col-md-4">
+            <div class="col-12 col-md-6 col-xl-3">
 
                 <div class="card h-100">
 
@@ -175,6 +184,44 @@
                             </p>
 
                             <a href="/admin/customers"
+                               class="stretched-link">
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- CUSTOM TAILORING -->
+
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body d-flex gap-3 align-items-start">
+
+                        <div class="display-6 text-danger">
+
+                            <i class="fas fa-cut"></i>
+
+                        </div>
+
+                        <div>
+
+                            <h5 class="card-title mb-1">
+                                Custom Tailoring
+                            </h5>
+
+                            <p class="card-text text-muted small">
+                                Manage customer tailoring requests,
+                                quotations and progress.
+                            </p>
+
+                            <a href="/admin/tailoring"
                                class="stretched-link">
                             </a>
 
@@ -332,6 +379,78 @@
                         <h2>
                             @pendingOrders
                         </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TOTAL TAILORING REQUESTS -->
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-danger fs-2">
+
+                            <i class="fas fa-cut"></i>
+
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Tailoring Requests
+                        </p>
+
+                        <h2>
+                            @totalTailoringRequests
+                        </h2>
+
+                        <a href="/admin/tailoring"
+                           class="small text-decoration-none">
+
+                            Manage Tailoring →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENDING TAILORING -->
+
+            <div class="col-12 col-sm-6 col-xl-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-warning fs-2">
+
+                            <i class="fas fa-hourglass-half"></i>
+
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Pending Tailoring
+                        </p>
+
+                        <h2>
+                            @pendingTailoringRequests
+                        </h2>
+
+                        <a href="/admin/tailoring"
+                           class="small text-decoration-none">
+
+                            View Requests →
+
+                        </a>
 
                     </div>
 
@@ -526,6 +645,170 @@
 
         </div>
 
+
+        <!-- =========================
+             RECENT CUSTOM TAILORING
+             ========================= -->
+
+        <div class="mt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h2 class="h4 mb-0">
+                    Recent Custom Tailoring Requests
+                </h2>
+
+                <a href="/admin/tailoring"
+                   class="text-decoration-none">
+
+                    View All →
+
+                </a>
+
+            </div>
+
+
+            @if (!recentTailoringRequests.Any())
+            {
+                <div class="alert alert-light">
+
+                    No custom tailoring requests yet.
+
+                </div>
+            }
+            else
+            {
+
+                <div class="table-responsive">
+
+                    <table class="table align-middle">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Request
+                                </th>
+
+                                <th>
+                                    Customer
+                                </th>
+
+                                <th>
+                                    Outfit
+                                </th>
+
+                                <th>
+                                    Quote
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var request in recentTailoringRequests)
+                            {
+
+                                <tr>
+
+                                    <td>
+                                        #@request.Id
+                                    </td>
+
+                                    <td>
+                                        @(request.User?.FullName ?? "Unknown Customer")
+                                    </td>
+
+                                    <td>
+                                        @request.OutfitType
+                                    </td>
+
+                                    <td>
+
+                                        @if (request.QuotedAmount.HasValue)
+                                        {
+                                            <span>
+                                                ₦@request.QuotedAmount.Value.ToString("N0")
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                Awaiting quote
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+
+                                        @if (request.Status == "Pending")
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                Pending
+                                            </span>
+                                        }
+                                        else if (request.Status == "Quote Provided")
+                                        {
+                                            <span class="badge bg-info text-dark">
+                                                Quote Provided
+                                            </span>
+                                        }
+                                        else if (request.Status == "In Progress")
+                                        {
+                                            <span class="badge bg-primary">
+                                                In Progress
+                                            </span>
+                                        }
+                                        else if (request.Status == "Ready")
+                                        {
+                                            <span class="badge bg-success">
+                                                Ready
+                                            </span>
+                                        }
+                                        else if (request.Status == "Completed")
+                                        {
+                                            <span class="badge bg-success">
+                                                Completed
+                                            </span>
+                                        }
+                                        else if (request.Status == "Cancelled")
+                                        {
+                                            <span class="badge bg-danger">
+                                                Cancelled
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">
+                                                @request.Status
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                </tr>
+
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            }
+
+        </div>
+
     }
 
 </div>
@@ -549,7 +832,13 @@
 
     private decimal totalRevenue;
 
+    private int totalTailoringRequests;
+
+    private int pendingTailoringRequests;
+
     private List<Order> recentOrders = new();
+
+    private List<TailoringRequest> recentTailoringRequests = new();
 
 
     // =========================
@@ -560,7 +849,9 @@
     {
         try
         {
-            // Get products
+            // =========================
+            // PRODUCTS
+            // =========================
 
             var products =
                 await ProductService.GetAllProductsAsync();
@@ -569,7 +860,9 @@
                 products.Count;
 
 
-            // Get orders
+            // =========================
+            // ORDERS
+            // =========================
 
             var orders =
                 await OrderService.GetAllOrdersAsync();
@@ -578,7 +871,9 @@
                 orders.Count;
 
 
-            // Count paid orders
+            // =========================
+            // PAID ORDERS
+            // =========================
 
             paidOrders =
                 orders.Count(order =>
@@ -588,14 +883,18 @@
                     order.Status == "Delivered");
 
 
-            // Count pending orders
+            // =========================
+            // PENDING ORDERS
+            // =========================
 
             pendingOrders =
                 orders.Count(order =>
                     order.Status == "Pending");
 
 
-            // Calculate revenue
+            // =========================
+            // REVENUE
+            // =========================
 
             totalRevenue =
                 orders
@@ -608,12 +907,46 @@
                         order.TotalAmount);
 
 
-            // Get five most recent orders
+            // =========================
+            // RECENT ORDERS
+            // =========================
 
             recentOrders =
                 orders
                     .OrderByDescending(order =>
                         order.CreatedAt)
+                    .Take(5)
+                    .ToList();
+
+
+            // =========================
+            // TAILORING REQUESTS
+            // =========================
+
+            var tailoringRequests =
+                await TailoringService.GetAllRequestsAsync();
+
+            totalTailoringRequests =
+                tailoringRequests.Count;
+
+
+            // =========================
+            // PENDING TAILORING
+            // =========================
+
+            pendingTailoringRequests =
+                tailoringRequests.Count(request =>
+                    request.Status == "Pending");
+
+
+            // =========================
+            // RECENT TAILORING REQUESTS
+            // =========================
+
+            recentTailoringRequests =
+                tailoringRequests
+                    .OrderByDescending(request =>
+                        request.CreatedAt)
                     .Take(5)
                     .ToList();
         }

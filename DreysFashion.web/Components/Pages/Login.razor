@@ -170,9 +170,28 @@
 
             if (result)
             {
-                NavigationManager.NavigateTo(
-                    "/my-orders",
-                    forceLoad: true);
+                var uri =
+                    NavigationManager.ToAbsoluteUri(
+                        NavigationManager.Uri);
+
+                var query =
+                    Microsoft.AspNetCore.WebUtilities
+                        .QueryHelpers
+                        .ParseQuery(uri.Query);
+
+                if (query.TryGetValue("returnUrl", out var returnUrl)
+                    && !string.IsNullOrWhiteSpace(returnUrl))
+                {
+                    NavigationManager.NavigateTo(
+                        returnUrl.ToString(),
+                        forceLoad: true);
+                }
+                else
+                {
+                    NavigationManager.NavigateTo(
+                        "/my-orders",
+                        forceLoad: true);
+                }
 
                 return;
             }

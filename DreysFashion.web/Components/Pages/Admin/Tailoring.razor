@@ -1,0 +1,436 @@
+﻿@page "/admin/tailoring"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ITailoringService TailoringService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Tailoring Requests | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <!-- ========================================================= -->
+    <!-- PAGE HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            ADMINISTRATION
+        </p>
+
+        <h1>
+            Custom Tailoring Requests
+        </h1>
+
+        <p>
+            Manage customer tailoring requests, quotations and
+            production progress.
+        </p>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- MESSAGES -->
+    <!-- ========================================================= -->
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger">
+            @errorMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(successMessage))
+    {
+        <div class="alert alert-success">
+            @successMessage
+        </div>
+    }
+
+
+    <!-- ========================================================= -->
+    <!-- LOADING -->
+    <!-- ========================================================= -->
+
+    @if (isLoading)
+    {
+        <div class="page-header">
+
+            <p>
+                Loading tailoring requests...
+            </p>
+
+        </div>
+    }
+    else
+    {
+        <!-- ===================================================== -->
+        <!-- SUMMARY -->
+        <!-- ===================================================== -->
+
+        <div class="admin-summary-grid">
+
+            <div class="admin-summary-card">
+
+                <span>
+                    Total Requests
+                </span>
+
+                <strong>
+                    @requests.Count
+                </strong>
+
+            </div>
+
+
+            <div class="admin-summary-card">
+
+                <span>
+                    Pending
+                </span>
+
+                <strong>
+                    @GetCount("Pending")
+                </strong>
+
+            </div>
+
+
+            <div class="admin-summary-card">
+
+                <span>
+                    In Progress
+                </span>
+
+                <strong>
+                    @GetCount("In Progress")
+                </strong>
+
+            </div>
+
+
+            <div class="admin-summary-card">
+
+                <span>
+                    Completed
+                </span>
+
+                <strong>
+                    @GetCount("Completed")
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- REQUEST LIST -->
+        <!-- ===================================================== -->
+
+        @if (requests.Count == 0)
+        {
+            <div class="page-header">
+
+                <h2>
+                    No Tailoring Requests
+                </h2>
+
+                <p>
+                    There are currently no custom tailoring requests.
+                </p>
+
+            </div>
+        }
+        else
+        {
+            <div class="admin-table-container">
+
+                <table class="admin-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Request
+                            </th>
+
+                            <th>
+                                Customer
+                            </th>
+
+                            <th>
+                                Outfit
+                            </th>
+
+                            <th>
+                                Submitted
+                            </th>
+
+                            <th>
+                                Quote
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        @foreach (var request in requests)
+                        {
+                            <tr>
+
+                                <!-- REQUEST -->
+
+                                <td>
+
+                                    <strong>
+                                        #@request.Id
+                                    </strong>
+
+                                </td>
+
+
+                                <!-- CUSTOMER -->
+
+                                <td>
+
+                                    @if (request.User != null)
+                                    {
+                                        <div>
+
+                                            <strong>
+                                                @request.User.FullName
+                                            </strong>
+
+                                            <small>
+                                                @request.User.Email
+                                            </small>
+
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span>
+                                            Unknown Customer
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <!-- OUTFIT -->
+
+                                <td>
+
+                                    @request.OutfitType
+
+                                </td>
+
+
+                                <!-- DATE -->
+
+                                <td>
+
+                                    @request.CreatedAt
+                                        .ToLocalTime()
+                                        .ToString("dd MMM yyyy")
+
+                                </td>
+
+
+                                <!-- QUOTE -->
+
+                                <td>
+
+                                    @if (request.QuotedAmount.HasValue)
+                                    {
+                                        <strong>
+                                            ₦@request.QuotedAmount.Value.ToString("N0")
+                                        </strong>
+                                    }
+                                    else
+                                    {
+                                        <span>
+                                            Not quoted
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <!-- STATUS -->
+
+                                <td>
+
+                                    <span class="@GetStatusClass(request.Status)">
+                                        @request.Status
+                                    </span>
+
+                                </td>
+
+
+                                <!-- ACTIONS -->
+
+                                <td>
+
+                                    <button type="button"
+                                            class="add-cart"
+                                            @onclick="() => OpenRequest(request.Id)">
+
+                                        Manage
+
+                                    </button>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    }
+
+</div>
+
+
+@code {
+
+    /// <summary>
+    /// Stores all tailoring requests.
+    /// </summary>
+    private List<TailoringRequest> requests = new();
+
+
+    /// <summary>
+    /// Indicates whether requests are loading.
+    /// </summary>
+    private bool isLoading = true;
+
+
+    /// <summary>
+    /// Indicates whether an error occurred.
+    /// </summary>
+    private string? errorMessage;
+
+
+    /// <summary>
+    /// Stores a successful operation message.
+    /// </summary>
+    private string? successMessage;
+
+
+    /// <summary>
+    /// Loads all tailoring requests.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRequests();
+    }
+
+
+    /// <summary>
+    /// Loads all tailoring requests from the database.
+    /// </summary>
+    private async Task LoadRequests()
+    {
+        try
+        {
+            isLoading = true;
+
+            errorMessage = null;
+
+            requests =
+                await TailoringService
+                    .GetAllRequestsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load tailoring requests: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Gets the number of requests matching a status.
+    /// </summary>
+    private int GetCount(string status)
+    {
+        return requests.Count(request =>
+            string.Equals(
+                request.Status,
+                status,
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+
+    /// <summary>
+    /// Opens the tailoring request management page.
+    /// </summary>
+    private void OpenRequest(int requestId)
+    {
+        NavigationManager.NavigateTo(
+            $"/admin/tailoring/{requestId}");
+    }
+
+
+    /// <summary>
+    /// Returns the CSS class used for a request status.
+    /// </summary>
+    private string GetStatusClass(string status)
+    {
+        return status?.ToLowerInvariant() switch
+        {
+            "pending" =>
+                "status-badge status-pending",
+
+            "quote provided" =>
+                "status-badge status-quote",
+
+            "approved" =>
+                "status-badge status-approved",
+
+            "in progress" =>
+                "status-badge status-progress",
+
+            "ready" =>
+                "status-badge status-ready",
+
+            "completed" =>
+                "status-badge status-completed",
+
+            "cancelled" =>
+                "status-badge status-cancelled",
+
+            _ =>
+                "status-badge"
+        };
+    }
+}

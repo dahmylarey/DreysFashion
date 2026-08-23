@@ -3,11 +3,18 @@
 
 @using System.Security.Claims
 @using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using Microsoft.AspNetCore.Identity
 
+@attribute [Authorize]
+
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject UserManager<ApplicationUser> UserManager
+@inject IOrderService OrderService
+@inject ITailoringService TailoringService
+@inject IMeasurementService MeasurementService
 @inject NavigationManager NavigationManager
 
 <PageTitle>My Account | Drey's Fashion</PageTitle>
@@ -17,7 +24,19 @@
     @if (loading)
     {
         <div class="page-header">
-            <p>Loading your account...</p>
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                My Account
+            </h1>
+
+            <p>
+                Loading your account...
+            </p>
+
         </div>
     }
     else if (!isAuthenticated)
@@ -33,17 +52,24 @@
             </h1>
 
             <p>
-                Sign in to access your account.
+                Sign in to access your account dashboard.
             </p>
 
-            <a href="/Account/Login" class="add-cart">
+            <a href="/Account/Login"
+               class="add-cart">
+
                 Sign In
+
             </a>
 
         </div>
     }
     else
     {
+        <!-- ===================================================== -->
+        <!-- DASHBOARD HEADER -->
+        <!-- ===================================================== -->
+
         <div class="page-header">
 
             <p class="eyebrow">
@@ -60,9 +86,12 @@
 
         </div>
 
-        <div class="account-container">
 
-            <!-- Profile -->
+        <!-- ===================================================== -->
+        <!-- PROFILE -->
+        <!-- ===================================================== -->
+        @if (user != null)
+        {
             <div class="account-card">
 
                 <div class="account-card-icon">
@@ -72,110 +101,645 @@
                 <div class="account-card-content">
 
                     <h2>
-                        Profile
+                        @user.FullName
                     </h2>
 
                     <p>
-                        Manage your personal information.
+                        @user.Email
                     </p>
 
-                    @if (user != null)
-                    {
-                        <div class="account-details">
+                    <div class="account-details">
 
-                            <div>
-                                <span>
-                                    Name
-                                </span>
+                        <div>
 
-                                <strong>
-                                    @user.FullName
-                                </strong>
-                            </div>
+                            <span>
+                                Email
+                            </span>
 
-                            <div>
-                                <span>
-                                    Email
-                                </span>
-
-                                <strong>
-                                    @user.Email
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>
-                                    Phone
-                                </span>
-
-                                <strong>
-                                    @(string.IsNullOrWhiteSpace(user.PhoneNumber)
-                                        ? "Not provided"
-                                        : user.PhoneNumber)
-                                </strong>
-                            </div>
+                            <strong>
+                                @user.Email
+                            </strong>
 
                         </div>
-                    }
+
+                        <div>
+
+                            <span>
+                                Phone
+                            </span>
+
+                            <strong>
+                                @(string.IsNullOrWhiteSpace(user.PhoneNumber)
+                                    ? "Not provided"
+                                    : user.PhoneNumber)
+                            </strong>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-            </div><br />
+            </div>
+        }
 
 
-            <!-- Orders -->
-            <div class="account-card">
+        <!-- ===================================================== -->
+        <!-- OVERVIEW STATISTICS -->
+        <!-- ===================================================== -->
 
-                <div class="account-card-icon">
-                    📦
+        <div class="row g-3 mt-4">
+
+            <!-- TOTAL ORDERS -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-primary fs-2">
+                            📦
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Total Orders
+                        </p>
+
+                        <h2>
+                            @totalOrders
+                        </h2>
+
+                        <a href="/my-orders"
+                           class="small text-decoration-none">
+
+                            View Orders →
+
+                        </a>
+
+                    </div>
+
                 </div>
 
-                <div class="account-card-content">
+            </div>
 
-                    <h2>
-                        My Orders
-                    </h2>
 
-                    <p>
-                        View your orders and payment status.
-                    </p>
+            <!-- PAID ORDERS -->
 
-                    <a href="/my-orders" class="add-cart">
-                        View My Orders
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-success fs-2">
+                            ✓
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Paid Orders
+                        </p>
+
+                        <h2>
+                            @paidOrders
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- PENDING ORDERS -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-warning fs-2">
+                            ⏳
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Pending Orders
+                        </p>
+
+                        <h2>
+                            @pendingOrders
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- TAILORING REQUESTS -->
+
+            <div class="col-12 col-sm-6 col-lg-3">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-danger fs-2">
+                            ✂
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Tailoring Requests
+                        </p>
+
+                        <h2>
+                            @totalTailoringRequests
+                        </h2>
+
+                        <a href="/tailoring"
+                           class="small text-decoration-none">
+
+                            View Tailoring →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- TAILORING + MEASUREMENTS OVERVIEW -->
+        <!-- ===================================================== -->
+
+        <div class="row g-3 mt-1">
+
+            <!-- PENDING TAILORING -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-warning fs-2">
+                            ✂
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Pending Tailoring Requests
+                        </p>
+
+                        <h2>
+                            @pendingTailoringRequests
+                        </h2>
+
+                        <a href="/tailoring"
+                           class="small text-decoration-none">
+
+                            View Requests →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- MEASUREMENTS -->
+
+            <div class="col-12 col-md-6">
+
+                <div class="card h-100">
+
+                    <div class="card-body">
+
+                        <div class="text-primary fs-2">
+                            📏
+                        </div>
+
+                        <p class="text-muted mb-1">
+                            Measurement Profile
+                        </p>
+
+                        @if (measurementProfile != null)
+                        {
+                            <h2 class="text-success">
+                                Saved
+                            </h2>
+
+                            <p class="text-muted small">
+                                Your measurements are ready to use
+                                for custom tailoring.
+                            </p>
+                        }
+                        else
+                        {
+                            <h2 class="text-warning">
+                                Not Set
+                            </h2>
+
+                            <p class="text-muted small">
+                                Save your measurements to make
+                                future tailoring requests easier.
+                            </p>
+                        }
+
+                        <a href="/measurements"
+                           class="small text-decoration-none">
+
+                            Manage Measurements →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- RECENT ORDERS -->
+        <!-- ===================================================== -->
+
+        <div class="mt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h2 class="h4 mb-0">
+                    Recent Orders
+                </h2>
+
+                <a href="/my-orders"
+                   class="text-decoration-none">
+
+                    View All →
+
+                </a>
+
+            </div>
+
+
+            @if (!recentOrders.Any())
+            {
+                <div class="alert alert-light">
+
+                    You haven't placed any orders yet.
+
+                    <a href="/shop"
+                       class="text-decoration-none">
+
+                        Start shopping →
+
                     </a>
 
                 </div>
+            }
+            else
+            {
+                <div class="table-responsive">
 
-            </div><br />
+                    <table class="table align-middle">
 
+                        <thead>
 
-            <!-- Shopping -->
-            <div class="account-card">
+                            <tr>
 
-                <div class="account-card-icon">
-                    🛍
+                                <th>
+                                    Order
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Amount
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var order in recentOrders)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <strong>
+                                            #@order.Id
+                                        </strong>
+
+                                    </td>
+
+                                    <td>
+
+                                        @order.CreatedAt
+                                        .ToLocalTime()
+                                        .ToString("dd MMM yyyy")
+
+                                    </td>
+
+                                    <td>
+
+                                        ₦@order.TotalAmount.ToString("N0")
+
+                                    </td>
+
+                                    <td>
+
+                                        @GetOrderStatusBadge(order.Status)
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
                 </div>
+            }
 
-                <div class="account-card-content">
+        </div>
 
-                    <h2>
-                        Continue Shopping
-                    </h2>
 
-                    <p>
-                        Explore our latest fashion collection.
-                    </p>
+        <!-- ===================================================== -->
+        <!-- RECENT TAILORING -->
+        <!-- ===================================================== -->
 
-                    <a href="/shop" class="add-cart">
-                        Shop Now
+        <div class="mt-5">
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+
+                <h2 class="h4 mb-0">
+                    Recent Tailoring Requests
+                </h2>
+
+                <a href="/tailoring"
+                   class="text-decoration-none">
+
+                    View All →
+
+                </a>
+
+            </div>
+
+
+            @if (!recentTailoringRequests.Any())
+            {
+                <div class="alert alert-light">
+
+                    You haven't submitted a custom tailoring request yet.
+
+                    <a href="/tailoring"
+                       class="text-decoration-none">
+
+                        Create a request →
+
                     </a>
 
                 </div>
+            }
+            else
+            {
+                <div class="table-responsive">
 
-            </div><br />
+                    <table class="table align-middle">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Request
+                                </th>
+
+                                <th>
+                                    Outfit
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Quote
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @foreach (var request in recentTailoringRequests)
+                            {
+                                <tr>
+
+                                    <td>
+
+                                        <strong>
+                                            #@request.Id
+                                        </strong>
+
+                                    </td>
+
+                                    <td>
+                                        @request.OutfitType
+                                    </td>
+
+                                    <td>
+
+                                        @request.CreatedAt
+                                        .ToLocalTime()
+                                        .ToString("dd MMM yyyy")
+
+                                    </td>
+
+                                    <td>
+
+                                        @if (request.QuotedAmount.HasValue)
+                                        {
+                                            <strong>
+                                                ₦@request.QuotedAmount.Value.ToString("N0")
+                                            </strong>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">
+                                                Awaiting quote
+                                            </span>
+                                        }
+
+                                    </td>
+
+                                    <td>
+
+                                        @GetTailoringStatusBadge(request.Status)
+
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
 
 
-            <!-- Logout -->
+        <!-- ===================================================== -->
+        <!-- QUICK ACTIONS -->
+        <!-- ===================================================== -->
+
+        <div class="mt-5">
+
+            <h2 class="h4 mb-3">
+                Quick Actions
+            </h2>
+
+            <div class="row g-3">
+
+                <!-- SHOP -->
+
+                <div class="col-12 col-md-4">
+
+                    <div class="account-card h-100">
+
+                        <div class="account-card-icon">
+                            🛍
+                        </div>
+
+                        <div class="account-card-content">
+
+                            <h2>
+                                Continue Shopping
+                            </h2>
+
+                            <p>
+                                Explore our latest fashion collection.
+                            </p>
+
+                            <a href="/shop"
+                               class="add-cart">
+
+                                Shop Now
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- TAILORING -->
+
+                <div class="col-12 col-md-4">
+
+                    <div class="account-card h-100">
+
+                        <div class="account-card-icon">
+                            ✂
+                        </div>
+
+                        <div class="account-card-content">
+
+                            <h2>
+                                Custom Tailoring
+                            </h2>
+
+                            <p>
+                                Submit a new custom tailoring request.
+                            </p>
+
+                            <a href="/tailoring"
+                               class="add-cart">
+
+                                Request Tailoring
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- MEASUREMENTS -->
+
+                <div class="col-12 col-md-4">
+
+                    <div class="account-card h-100">
+
+                        <div class="account-card-icon">
+                            📏
+                        </div>
+
+                        <div class="account-card-content">
+
+                            <h2>
+                                My Measurements
+                            </h2>
+
+                            <p>
+                                Keep your measurements updated.
+                            </p>
+
+                            <a href="/measurements"
+                               class="add-cart">
+
+                                Manage Measurements
+
+                            </a>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- SIGN OUT -->
+        <!-- ===================================================== -->
+
+        <div class="mt-5">
+
             <div class="account-card logout-card">
 
                 <div class="account-card-icon">
@@ -190,11 +754,14 @@
 
                     <p>
                         Sign out of your Drey's Fashion account.
-                    </p><br />
+                    </p>
 
-                    <button class="add-cart"
+                    <button type="button"
+                            class="add-cart"
                             @onclick="LogoutAsync">
+
                         Sign Out
+
                     </button>
 
                 </div>
@@ -206,7 +773,12 @@
 
 </div>
 
+
 @code {
+
+    // =========================================================
+    // Account
+    // =========================================================
 
     private ApplicationUser? user;
 
@@ -216,53 +788,299 @@
 
     private string userName = string.Empty;
 
+    private string userId = string.Empty;
+
+
+    // =========================================================
+    // Orders
+    // =========================================================
+
+    private List<Order> orders = new();
+
+    private List<Order> recentOrders = new();
+
+    private int totalOrders;
+
+    private int paidOrders;
+
+    private int pendingOrders;
+
+
+    // =========================================================
+    // Tailoring
+    // =========================================================
+
+    private List<TailoringRequest> tailoringRequests = new();
+
+    private List<TailoringRequest> recentTailoringRequests = new();
+
+    private int totalTailoringRequests;
+
+    private int pendingTailoringRequests;
+
+
+    // =========================================================
+    // Measurements
+    // =========================================================
+
+    private MeasurementProfile? measurementProfile;
+
+
+    // =========================================================
+    // INITIALIZATION
+    // =========================================================
 
     protected override async Task OnInitializedAsync()
     {
-        var authenticationState =
-            await AuthenticationStateProvider
-                .GetAuthenticationStateAsync();
+        try
+        {
+            loading = true;
 
-        var principal = authenticationState.User;
+            // =====================================================
+            // GET AUTHENTICATION STATE
+            // =====================================================
 
-        isAuthenticated =
-            principal.Identity?.IsAuthenticated ?? false;
+            var authenticationState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
 
-        if (!isAuthenticated)
+            var principal =
+                authenticationState.User;
+
+            isAuthenticated =
+                principal.Identity?.IsAuthenticated ?? false;
+
+            if (!isAuthenticated)
+            {
+                return;
+            }
+
+
+            // =====================================================
+            // GET USER ID
+            // =====================================================
+
+            userId =
+                principal.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value
+                ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                isAuthenticated = false;
+                return;
+            }
+
+
+            // =====================================================
+            // GET USER PROFILE
+            // =====================================================
+
+            user =
+                await UserManager.FindByIdAsync(userId);
+
+            if (user != null)
+            {
+                userName =
+                    string.IsNullOrWhiteSpace(user.FullName)
+                        ? user.Email ?? "Customer"
+                        : user.FullName;
+            }
+            else
+            {
+                userName = "Customer";
+            }
+
+
+            // =====================================================
+            // GET CUSTOMER ORDERS
+            // =====================================================
+
+            orders =
+                await OrderService
+                    .GetOrdersByUserIdAsync(userId);
+
+            totalOrders =
+                orders.Count;
+
+
+            // =====================================================
+            // PAID ORDERS
+            // =====================================================
+
+            paidOrders =
+                orders.Count(order =>
+                    order.Status == "Paid" ||
+                    order.Status == "Processing" ||
+                    order.Status == "Shipped" ||
+                    order.Status == "Delivered");
+
+
+            // =====================================================
+            // PENDING ORDERS
+            // =====================================================
+
+            pendingOrders =
+                orders.Count(order =>
+                    order.Status == "Pending");
+
+
+            // =====================================================
+            // RECENT ORDERS
+            // =====================================================
+
+            recentOrders =
+                orders
+                    .OrderByDescending(order =>
+                        order.CreatedAt)
+                    .Take(5)
+                    .ToList();
+
+
+            // =====================================================
+            // GET CUSTOMER TAILORING REQUESTS
+            // =====================================================
+
+            tailoringRequests =
+                await TailoringService
+                    .GetRequestsByUserIdAsync(userId);
+
+            totalTailoringRequests =
+                tailoringRequests.Count;
+
+
+            // =====================================================
+            // PENDING TAILORING
+            // =====================================================
+
+            pendingTailoringRequests =
+                tailoringRequests.Count(request =>
+                    request.Status == "Pending");
+
+
+            // =====================================================
+            // RECENT TAILORING REQUESTS
+            // =====================================================
+
+            recentTailoringRequests =
+                tailoringRequests
+                    .OrderByDescending(request =>
+                        request.CreatedAt)
+                    .Take(5)
+                    .ToList();
+
+
+            // =====================================================
+            // GET MEASUREMENT PROFILE
+            // =====================================================
+
+            measurementProfile =
+                await MeasurementService
+                    .GetByUserIdAsync(userId);
+        }
+        finally
         {
             loading = false;
-            return;
         }
-
-        var userId =
-            principal.FindFirst(
-                ClaimTypes.NameIdentifier)?.Value;
-
-        if (string.IsNullOrWhiteSpace(userId))
-        {
-            loading = false;
-            return;
-        }
-
-        user =
-            await UserManager.FindByIdAsync(userId);
-
-        if (user != null)
-        {
-            userName =
-                string.IsNullOrWhiteSpace(user.FullName)
-                    ? user.Email ?? "Customer"
-                    : user.FullName;
-        }
-
-        loading = false;
     }
 
 
-    private async Task LogoutAsync()
+    // =========================================================
+    // LOGOUT
+    // =========================================================
+
+    private Task LogoutAsync()
     {
         NavigationManager.NavigateTo(
             "/account/logout",
             forceLoad: true);
+
+        return Task.CompletedTask;
     }
+
+
+    // =========================================================
+    // ORDER STATUS BADGE
+    // =========================================================
+
+    private MarkupString GetOrderStatusBadge(string? status)
+    {
+        var cssClass =
+            status?.ToLowerInvariant() switch
+            {
+                "paid" =>
+                    "badge bg-success",
+
+                "processing" =>
+                    "badge bg-primary",
+
+                "shipped" =>
+                    "badge bg-info text-dark",
+
+                "delivered" =>
+                    "badge bg-success",
+
+                "pending" =>
+                    "badge bg-warning text-dark",
+
+                "cancelled" =>
+                    "badge bg-danger",
+
+                _ =>
+                    "badge bg-secondary"
+            };
+
+        var text =
+            string.IsNullOrWhiteSpace(status)
+                ? "Unknown"
+                : status;
+
+        return new MarkupString(
+            $"<span class=\"{cssClass}\">{text}</span>");
+    }
+
+
+    // =========================================================
+    // TAILORING STATUS BADGE
+    // =========================================================
+
+    private MarkupString GetTailoringStatusBadge(string? status)
+    {
+        var cssClass =
+            status?.ToLowerInvariant() switch
+            {
+                "pending" =>
+                    "badge bg-warning text-dark",
+
+                "quote provided" =>
+                    "badge bg-info text-dark",
+
+                "approved" =>
+                    "badge bg-primary",
+
+                "in progress" =>
+                    "badge bg-primary",
+
+                "ready" =>
+                    "badge bg-success",
+
+                "completed" =>
+                    "badge bg-success",
+
+                "cancelled" =>
+                    "badge bg-danger",
+
+                _ =>
+                    "badge bg-secondary"
+            };
+
+        var text =
+            string.IsNullOrWhiteSpace(status)
+                ? "Unknown"
+                : status;
+
+        return new MarkupString(
+            $"<span class=\"{cssClass}\">{text}</span>");
+    }
+
 }

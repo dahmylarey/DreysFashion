@@ -4,6 +4,7 @@
 @using DreysFashion.web.ViewModels
 @using DreysFashion.web.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
 
 @attribute [Authorize(Roles = "Admin")]
 
@@ -32,194 +33,252 @@
 
     <div class="row checkout-container g-4">
 
+        <!-- FORM -->
         <div class="col-12 col-md-7">
 
             <div class="card">
+
                 <div class="card-body">
 
                     <EditForm Model="product"
                               OnValidSubmit="SaveProduct">
 
-                <DataAnnotationsValidator />
+                        <DataAnnotationsValidator />
 
-                <ValidationSummary />
+                        <ValidationSummary />
 
-                <!-- Product Name -->
-                <div class="form-group">
+                        <!-- Product Name -->
+                        <div class="form-group mb-3">
 
-                    <label for="name">
-                        Product Name
-                    </label>
+                            <label for="name">
+                                Product Name
+                            </label>
 
-                    <InputText id="name"
-                               class="form-control"
-                               @bind-Value="product.Name" />
+                            <InputText id="name"
+                                       class="form-control"
+                                       @bind-Value="product.Name" />
 
-                    <ValidationMessage For="@(() => product.Name)" />
+                            <ValidationMessage For="@(() => product.Name)" />
 
-                </div>
+                        </div>
 
-                <!-- Description -->
-                <div class="form-group">
+                        <!-- Description -->
+                        <div class="form-group mb-3">
 
-                    <label for="description">
-                        Description
-                    </label>
+                            <label for="description">
+                                Description
+                            </label>
 
-                    <InputTextArea id="description"
-                                   class="form-control"
-                                   rows="5"
-                                   @bind-Value="product.Description" />
+                            <InputTextArea id="description"
+                                           class="form-control"
+                                           rows="5"
+                                           @bind-Value="product.Description" />
 
-                    <ValidationMessage For="@(() => product.Description)" />
+                            <ValidationMessage For="@(() => product.Description)" />
 
-                </div>
+                        </div>
 
-                <!-- Price -->
-                <div class="form-group">
+                        <!-- Price -->
+                        <div class="form-group mb-3">
 
-                    <label for="price">
-                        Price (₦)
-                    </label>
+                            <label for="price">
+                                Price (₦)
+                            </label>
 
-                    <InputNumber id="price"
-                                 class="form-control"
-                                 @bind-Value="product.Price" />
+                            <InputNumber id="price"
+                                         class="form-control"
+                                         @bind-Value="product.Price" />
 
-                    <ValidationMessage For="@(() => product.Price)" />
+                            <ValidationMessage For="@(() => product.Price)" />
 
-                </div>
+                        </div>
 
-                <!-- Stock -->
-                <div class="form-group">
+                        <!-- Stock -->
+                        <div class="form-group mb-3">
 
-                    <label for="stock">
-                        Stock Quantity
-                    </label>
+                            <label for="stock">
+                                Stock Quantity
+                            </label>
 
-                    <InputNumber id="stock"
-                                 class="form-control"
-                                 @bind-Value="product.StockQuantity" />
+                            <InputNumber id="stock"
+                                         class="form-control"
+                                         @bind-Value="product.StockQuantity" />
 
-                    <ValidationMessage For="@(() => product.StockQuantity)" />
+                            <ValidationMessage For="@(() => product.StockQuantity)" />
 
-                </div>
+                        </div>
 
-                <!-- Image URL -->
-                <div class="form-group">
+                        <!-- PRODUCT IMAGE -->
+                        <div class="form-group mb-3">
 
-                    <label for="imageUrl">
-                        Product Image URL
-                    </label>
+                            <label for="productImage"
+                                   class="form-label">
 
-                    <InputText id="imageUrl"
-                               class="form-control"
-                               @bind-Value="product.ImageUrl" />
+                                Product Image
 
-                    <small class="form-text text-muted">
-                        Enter the URL of the product image.
-                    </small>
+                            </label>
 
-                </div>
+                            <InputFile id="productImage"
+                                       OnChange="HandleImageSelected"
+                                       accept=".jpg,.jpeg,.png,.webp"
+                                       class="form-control" />
 
-                <!-- Availability -->
-                <div class="form-group">
+                            <small class="text-muted">
 
-                    <div class="form-check">
+                                JPG, JPEG, PNG or WEBP.
+                                Maximum size: 5 MB.
 
-                        <InputCheckbox id="available"
-                                       class="form-check-input"
-                                       @bind-Value="product.IsAvailable" />
+                            </small>
 
-                        <label class="form-check-label"
-                               for="available">
-                            Product is available for purchase
-                        </label>
+                            @if (selectedImage != null)
+                            {
+                                <div class="mt-2">
 
-                    </div>
+                                    <span class="badge bg-success">
 
-                </div>
+                                        <i class="fas fa-check me-1"></i>
 
-                @if (!string.IsNullOrWhiteSpace(errorMessage))
-                {
-                    <div class="alert alert-danger">
-                        @errorMessage
-                    </div>
-                }
+                                        @selectedImage.Name
 
-                <div class="admin-actions">
+                                    </span>
 
-                    <button type="submit"
-                            class="add-cart"
-                            disabled="@isSaving">
+                                </div>
+                            }
 
-                        @if (isSaving)
+                        </div>
+
+                        <!-- Availability -->
+                        <div class="form-group mb-3">
+
+                            <div class="form-check">
+
+                                <InputCheckbox id="available"
+                                               class="form-check-input"
+                                               @bind-Value="product.IsAvailable" />
+
+                                <label class="form-check-label"
+                                       for="available">
+
+                                    Product is available for purchase
+
+                                </label>
+
+                            </div>
+
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(errorMessage))
                         {
-                            <span>
-                                Saving Product...
-                            </span>
-                        }
-                        else
-                        {
-                            <span>
-                                Save Product
-                            </span>
+                            <div class="alert alert-danger">
+
+                                @errorMessage
+
+                            </div>
                         }
 
-                    </button>
+                        <div class="admin-actions d-flex gap-2">
 
-                    <a href="/admin/products"
-                       class="secondary-button">
-                        Cancel
-                    </a>
+                            <button type="submit"
+                                    class="add-cart"
+                                    disabled="@isSaving">
 
-                </div>
+                                @if (isSaving)
+                                {
+                                    <span>
+                                        Saving Product...
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>
+                                        Save Product
+                                    </span>
+                                }
+
+                            </button>
+
+                            <a href="/admin/products"
+                               class="secondary-button">
+
+                                Cancel
+
+                            </a>
+
+                        </div>
 
                     </EditForm>
 
                 </div>
+
             </div>
 
         </div>
 
-        <!-- Preview -->
+        <!-- PREVIEW -->
         <aside class="col-12 col-md-5">
 
             <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Product Preview</h5>
 
-                    @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
+                <div class="card-body">
+
+                    <h5 class="card-title">
+                        Product Preview
+                    </h5>
+
+                    @if (!string.IsNullOrWhiteSpace(previewImageUrl))
                     {
-                        <img src="@product.ImageUrl"
+                        <img src="@previewImageUrl"
                              alt="@product.Name"
-                             class="img-fluid rounded mb-3" style="max-height:300px; object-fit:cover;" />
+                             class="img-fluid rounded mb-3"
+                             style="max-height:300px; width:100%; object-fit:cover;" />
                     }
                     else
                     {
-                        <div class="text-muted mb-3">
-                            Product image preview will appear here.
+                        <div class="bg-light rounded d-flex flex-column align-items-center justify-content-center mb-3"
+                             style="height:300px;">
+
+                            <i class="fas fa-image fa-3x text-muted mb-2"></i>
+
+                            <span class="text-muted">
+                                Product image preview
+                            </span>
+
                         </div>
                     }
 
                     <h6 class="mb-1">
+
                         @(string.IsNullOrWhiteSpace(product.Name)
                             ? "Product Name"
                             : product.Name)
+
                     </h6>
 
                     <p class="text-muted small mb-2">
+
                         @(string.IsNullOrWhiteSpace(product.Description)
                             ? "Product description"
                             : product.Description)
+
                     </p>
 
                     <div class="d-flex align-items-center justify-content-between">
-                        <strong>₦@product.Price.ToString("N0")</strong>
-                        <span class="text-muted small">Stock: @product.StockQuantity</span>
+
+                        <strong>
+                            ₦@product.Price.ToString("N0")
+                        </strong>
+
+                        <span class="text-muted small">
+
+                            Stock:
+                            @product.StockQuantity
+
+                        </span>
+
                     </div>
 
                 </div>
+
             </div>
 
         </aside>
@@ -235,9 +294,83 @@
         IsAvailable = true
     };
 
+    private IBrowserFile? selectedImage;
+
+    private string? previewImageUrl;
+
     private bool isSaving;
 
     private string? errorMessage;
+
+    private async Task HandleImageSelected(
+        InputFileChangeEventArgs e)
+    {
+        errorMessage = null;
+
+        selectedImage = e.File;
+
+        if (selectedImage == null)
+        {
+            previewImageUrl = null;
+
+            return;
+        }
+
+        if (selectedImage.Size > 5 * 1024 * 1024)
+        {
+            errorMessage =
+                "Product image cannot be larger than 5 MB.";
+
+            selectedImage = null;
+            previewImageUrl = null;
+
+            return;
+        }
+
+        var extension =
+            Path.GetExtension(selectedImage.Name)
+                .ToLowerInvariant();
+
+        if (extension != ".jpg" &&
+            extension != ".jpeg" &&
+            extension != ".png" &&
+            extension != ".webp")
+        {
+            errorMessage =
+                "Only JPG, JPEG, PNG and WEBP images are allowed.";
+
+            selectedImage = null;
+            previewImageUrl = null;
+
+            return;
+        }
+
+        try
+        {
+            await using var stream =
+                selectedImage.OpenReadStream(
+                    5 * 1024 * 1024);
+
+            using var memoryStream =
+                new MemoryStream();
+
+            await stream.CopyToAsync(memoryStream);
+
+            var imageBytes =
+                memoryStream.ToArray();
+
+            previewImageUrl =
+                $"data:{selectedImage.ContentType};base64,{Convert.ToBase64String(imageBytes)}";
+        }
+        catch
+        {
+            selectedImage = null;
+            previewImageUrl = null;
+
+            errorMessage =
+                "Unable to preview the selected image.";
+        }
+    }
 
     private async Task SaveProduct()
     {
@@ -249,9 +382,12 @@
         try
         {
             isSaving = true;
+
             errorMessage = null;
 
-            await ProductService.CreateProductAsync(product);
+            await ProductService.CreateProductAsync(
+                product,
+                selectedImage);
 
             NavigationManager.NavigateTo(
                 "/admin/products",

@@ -1,16 +1,21 @@
 ﻿@page "/checkout"
 @rendermode InteractiveServer
 
+@using System.Security.Claims
 @using DreysFashion.web.Services.Interfaces
 @using DreysFashion.web.ViewModels
-@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]
 
 @inject ICartService CartService
 @inject IOrderService OrderService
 @inject IPaymentService PaymentService
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
+
+
 
 <PageTitle>Checkout | Drey's Fashion</PageTitle>
 

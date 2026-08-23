@@ -1,0 +1,778 @@
+﻿@page "/admin/tailoring/{id:int}"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject ITailoringService TailoringService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Manage Tailoring Request #@id | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    @if (isLoading)
+    {
+        <div class="page-header">
+            <p>Loading tailoring request...</p>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="page-header">
+
+            <p class="eyebrow">
+                ADMINISTRATION
+            </p>
+
+            <h1>
+                Request Not Found
+            </h1>
+
+            <p>
+                @errorMessage
+            </p>
+
+            <button type="button"
+                    class="add-cart"
+                    @onclick="GoBack">
+
+                Back To Tailoring Requests
+
+            </button>
+
+        </div>
+    }
+    else if (request != null)
+    {
+        <div class="order-confirmation">
+
+            <!-- ================================================= -->
+            <!-- HEADER -->
+            <!-- ================================================= -->
+
+            <div class="confirmation-header">
+
+                <p class="eyebrow">
+                    ADMINISTRATION
+                </p>
+
+                <div class="confirmation-icon">
+                    ✂
+                </div>
+
+                <h1>
+                    @request.OutfitType
+                </h1>
+
+                <p>
+                    Tailoring Request #@request.Id
+                </p>
+
+                <span class="@GetStatusClass(request.Status)">
+                    @request.Status
+                </span>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- CUSTOMER INFORMATION -->
+            <!-- ================================================= -->
+
+            <div class="order-summary">
+
+                <h2>
+                    Customer
+                </h2>
+
+                @if (request.User != null)
+                {
+                    <div class="order-customer-details">
+
+                        <p>
+                            <strong>Name:</strong>
+                            @request.User.FullName
+                        </p>
+
+                        <p>
+                            <strong>Email:</strong>
+                            @request.User.Email
+                        </p>
+
+                        <p>
+                            <strong>Phone:</strong>
+                            @(string.IsNullOrWhiteSpace(request.User.PhoneNumber)
+                                ? "Not provided"
+                                : request.User.PhoneNumber)
+                        </p>
+
+                    </div>
+                }
+                else
+                {
+                    <p>
+                        Customer information unavailable.
+                    </p>
+                }
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- REQUEST DETAILS -->
+            <!-- ================================================= -->
+
+            <div class="order-summary">
+
+                <h2>
+                    Request Details
+                </h2>
+
+                <div class="order-customer-details">
+
+                    <p>
+                        <strong>Outfit Type:</strong>
+                        @request.OutfitType
+                    </p>
+
+                    <p>
+                        <strong>Submitted:</strong>
+                        @request.CreatedAt
+                        .ToLocalTime()
+                        .ToString("dd MMM yyyy, hh:mm tt")
+                    </p>
+
+                    <p>
+                        <strong>Measurement Unit:</strong>
+                        @request.MeasurementUnit
+                    </p>
+
+                </div>
+
+                <hr />
+
+                <h3>
+                    Style Description
+                </h3>
+
+                <p>
+                    @request.StyleDescription
+                </p>
+
+
+                @if (!string.IsNullOrWhiteSpace(request.FabricPreference))
+                {
+                    <hr />
+
+                    <h3>
+                        Fabric Preference
+                    </h3>
+
+                    <p>
+                        @request.FabricPreference
+                    </p>
+                }
+
+
+                @if (!string.IsNullOrWhiteSpace(request.AdditionalInstructions))
+                {
+                    <hr />
+
+                    <h3>
+                        Additional Instructions
+                    </h3>
+
+                    <p>
+                        @request.AdditionalInstructions
+                    </p>
+                }
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- MEASUREMENTS -->
+            <!-- ================================================= -->
+
+            <div class="order-summary">
+
+                <h2>
+                    Customer Measurements
+                </h2>
+
+                <div class="measurement-summary">
+
+                    <div>
+                        <span>Chest</span>
+                        <strong>
+                            @DisplayMeasurement(request.Chest)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Waist</span>
+                        <strong>
+                            @DisplayMeasurement(request.Waist)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Hip</span>
+                        <strong>
+                            @DisplayMeasurement(request.Hip)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Shoulder</span>
+                        <strong>
+                            @DisplayMeasurement(request.Shoulder)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Sleeve Length</span>
+                        <strong>
+                            @DisplayMeasurement(request.SleeveLength)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Top Length</span>
+                        <strong>
+                            @DisplayMeasurement(request.TopLength)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Trouser Waist</span>
+                        <strong>
+                            @DisplayMeasurement(request.TrouserWaist)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Trouser Length</span>
+                        <strong>
+                            @DisplayMeasurement(request.TrouserLength)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Thigh</span>
+                        <strong>
+                            @DisplayMeasurement(request.Thigh)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Knee</span>
+                        <strong>
+                            @DisplayMeasurement(request.Knee)
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Ankle</span>
+                        <strong>
+                            @DisplayMeasurement(request.Ankle)
+                        </strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- QUOTATION -->
+            <!-- ================================================= -->
+
+            <div class="order-summary">
+
+                <h2>
+                    Tailoring Quote
+                </h2>
+
+                @if (request.QuotedAmount.HasValue)
+                {
+                    <div class="summary-total">
+
+                        <span>
+                            Current Quote
+                        </span>
+
+                        <strong>
+                            ₦@request.QuotedAmount.Value.ToString("N0")
+                        </strong>
+
+                    </div>
+                }
+                else
+                {
+                    <p>
+                        No quotation has been provided yet.
+                    </p>
+                }
+
+
+                <div class="form-group">
+
+                    <label>
+                        Quoted Amount (₦)
+                    </label>
+
+                    <InputNumber TValue="decimal"
+                                 class="form-control"
+                                 @bind-Value="quotedAmount" />
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label>
+                        Tailor / Admin Notes
+                    </label>
+
+                    <InputTextArea class="form-control"
+                                   rows="5"
+                                   @bind-Value="adminNotes" />
+
+                </div>
+
+
+                <button type="button"
+                        class="checkout-button"
+                        disabled="@isSavingQuote"
+                        @onclick="SaveQuote">
+
+                    @if (isSavingQuote)
+                    {
+                        <span>
+                            Saving Quote...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            Save Quote
+                        </span>
+                    }
+
+                </button>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- STATUS MANAGEMENT -->
+            <!-- ================================================= -->
+
+            <div class="order-summary">
+
+                <h2>
+                    Update Status
+                </h2>
+
+                <div class="form-group">
+
+                    <label>
+                        Request Status
+                    </label>
+
+                    <InputSelect class="form-control"
+                                 @bind-Value="selectedStatus">
+
+                        <option value="Pending">
+                            Pending
+                        </option>
+
+                        <option value="Quote Provided">
+                            Quote Provided
+                        </option>
+
+                        <option value="Approved">
+                            Approved
+                        </option>
+
+                        <option value="In Progress">
+                            In Progress
+                        </option>
+
+                        <option value="Ready">
+                            Ready
+                        </option>
+
+                        <option value="Completed">
+                            Completed
+                        </option>
+
+                        <option value="Cancelled">
+                            Cancelled
+                        </option>
+
+                    </InputSelect>
+
+                </div>
+
+
+                <button type="button"
+                        class="checkout-button"
+                        disabled="@isUpdatingStatus"
+                        @onclick="UpdateStatus">
+
+                    @if (isUpdatingStatus)
+                    {
+                        <span>
+                            Updating...
+                        </span>
+                    }
+                    else
+                    {
+                        <span>
+                            Update Status
+                        </span>
+                    }
+
+                </button>
+
+            </div>
+
+
+            <!-- ================================================= -->
+            <!-- MESSAGES -->
+            <!-- ================================================= -->
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="alert alert-success">
+                    @successMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(operationError))
+            {
+                <div class="alert alert-danger">
+                    @operationError
+                </div>
+            }
+
+
+            <!-- ================================================= -->
+            <!-- ACTIONS -->
+            <!-- ================================================= -->
+
+            <div class="confirmation-actions">
+
+                <button type="button"
+                        class="add-cart"
+                        @onclick="GoBack">
+
+                    Back To Requests
+
+                </button>
+
+            </div>
+
+        </div>
+    }
+
+</div>
+
+
+@code {
+
+    /// <summary>
+    /// Gets the tailoring request ID from the route.
+    /// </summary>
+    [Parameter]
+    public int id { get; set; }
+
+
+    /// <summary>
+    /// Stores the tailoring request being managed.
+    /// </summary>
+    private TailoringRequest? request;
+
+
+    /// <summary>
+    /// Indicates whether the request is loading.
+    /// </summary>
+    private bool isLoading = true;
+
+
+    /// <summary>
+    /// Stores the page loading error.
+    /// </summary>
+    private string? errorMessage;
+
+
+    /// <summary>
+    /// Stores a successful operation message.
+    /// </summary>
+    private string? successMessage;
+
+
+    /// <summary>
+    /// Stores an operation error.
+    /// </summary>
+    private string? operationError;
+
+
+    /// <summary>
+    /// Stores the quotation amount entered by the administrator.
+    /// </summary>
+    private decimal quotedAmount;
+
+
+    /// <summary>
+    /// Stores administrator notes.
+    /// </summary>
+    private string? adminNotes;
+
+
+    /// <summary>
+    /// Stores the selected request status.
+    /// </summary>
+    private string selectedStatus = "Pending";
+
+
+    /// <summary>
+    /// Indicates whether a quotation is being saved.
+    /// </summary>
+    private bool isSavingQuote;
+
+
+    /// <summary>
+    /// Indicates whether the status is being updated.
+    /// </summary>
+    private bool isUpdatingStatus;
+
+
+    /// <summary>
+    /// Loads the tailoring request.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadRequest();
+    }
+
+
+    /// <summary>
+    /// Retrieves the tailoring request.
+    /// </summary>
+    private async Task LoadRequest()
+    {
+        try
+        {
+            isLoading = true;
+
+            errorMessage = null;
+
+            request =
+                await TailoringService
+                    .GetRequestByIdAsync(id);
+
+            if (request == null)
+            {
+                errorMessage =
+                    "The tailoring request could not be found.";
+
+                return;
+            }
+
+            quotedAmount =
+                request.QuotedAmount ?? 0;
+
+            adminNotes =
+                request.AdminNotes;
+
+            selectedStatus =
+                string.IsNullOrWhiteSpace(request.Status)
+                    ? "Pending"
+                    : request.Status;
+        }
+        catch (Exception ex)
+        {
+            errorMessage =
+                $"Unable to load tailoring request: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Saves the administrator's quotation and notes.
+    /// </summary>
+    private async Task SaveQuote()
+    {
+        if (isSavingQuote)
+        {
+            return;
+        }
+
+        try
+        {
+            isSavingQuote = true;
+
+            successMessage = null;
+            operationError = null;
+
+            if (quotedAmount <= 0)
+            {
+                operationError =
+                    "Please enter a valid quotation amount.";
+
+                return;
+            }
+
+            var success =
+                await TailoringService.UpdateQuoteAsync(
+                    id,
+                    quotedAmount,
+                    adminNotes);
+
+            if (!success)
+            {
+                operationError =
+                    "Unable to save the quotation.";
+
+                return;
+            }
+
+            successMessage =
+                "Quotation saved successfully.";
+
+            await LoadRequest();
+        }
+        catch (Exception ex)
+        {
+            operationError =
+                $"Unable to save quotation: {ex.Message}";
+        }
+        finally
+        {
+            isSavingQuote = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Updates the tailoring request status.
+    /// </summary>
+    private async Task UpdateStatus()
+    {
+        if (isUpdatingStatus)
+        {
+            return;
+        }
+
+        try
+        {
+            isUpdatingStatus = true;
+
+            successMessage = null;
+            operationError = null;
+
+            if (string.IsNullOrWhiteSpace(selectedStatus))
+            {
+                operationError =
+                    "Please select a valid status.";
+
+                return;
+            }
+
+            var success =
+                await TailoringService.UpdateStatusAsync(
+                    id,
+                    selectedStatus);
+
+            if (!success)
+            {
+                operationError =
+                    "Unable to update the request status.";
+
+                return;
+            }
+
+            successMessage =
+                "Request status updated successfully.";
+
+            await LoadRequest();
+        }
+        catch (Exception ex)
+        {
+            operationError =
+                $"Unable to update request status: {ex.Message}";
+        }
+        finally
+        {
+            isUpdatingStatus = false;
+        }
+    }
+
+
+    /// <summary>
+    /// Navigates back to the tailoring request list.
+    /// </summary>
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo(
+            "/admin/tailoring");
+    }
+
+
+    /// <summary>
+    /// Formats a measurement for display.
+    /// </summary>
+    private string DisplayMeasurement(decimal? value)
+    {
+        if (!value.HasValue)
+        {
+            return "Not provided";
+        }
+
+        return value.Value.ToString("0.##");
+    }
+
+
+    /// <summary>
+    /// Returns the CSS class used for the request status.
+    /// </summary>
+    private string GetStatusClass(string status)
+    {
+        return status?.ToLowerInvariant() switch
+        {
+            "pending" =>
+                "status-badge status-pending",
+
+            "quote provided" =>
+                "status-badge status-quote",
+
+            "approved" =>
+                "status-badge status-approved",
+
+            "in progress" =>
+                "status-badge status-progress",
+
+            "ready" =>
+                "status-badge status-ready",
+
+            "completed" =>
+                "status-badge status-completed",
+
+            "cancelled" =>
+                "status-badge status-cancelled",
+
+            _ =>
+                "status-badge"
+        };
+    }
+}

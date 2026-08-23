@@ -1,8 +1,11 @@
 ﻿@rendermode InteractiveServer
 
 @using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 
 @inject ICartService CartService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
@@ -37,6 +40,7 @@
 
         </div>
 
+
         <!-- Shop -->
         <div class="nav-item px-3">
 
@@ -49,6 +53,7 @@
             </NavLink>
 
         </div>
+
 
         <!-- Cart -->
         <div class="nav-item px-3">
@@ -70,12 +75,20 @@
 
         </div>
 
+
         <!-- My Orders -->
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/my-orders">
-                <i class="fas fa-box me-2" aria-hidden="true"></i> My Orders
+
+            <NavLink class="nav-link"
+                     href="/my-orders">
+
+                <i class="fas fa-box me-2" aria-hidden="true"></i>
+                My Orders
+
             </NavLink>
+
         </div>
+
 
         <!-- Custom Tailoring -->
         <div class="nav-item px-3">
@@ -90,6 +103,35 @@
 
         </div>
 
+
+        <!-- My Measurements -->
+        <div class="nav-item px-3">
+
+            <NavLink class="nav-link"
+                     href="/my-measurements">
+
+                <i class="bi bi-rulers me-2"></i>
+                My Measurements
+
+            </NavLink>
+
+        </div>
+
+
+        <!-- My Tailoring Requests -->
+        <div class="nav-item px-3">
+
+            <NavLink class="nav-link"
+                     href="/my-tailoring-requests">
+
+                <i class="bi bi-list-check me-2"></i>
+                My Tailoring Requests
+
+            </NavLink>
+
+        </div>
+
+
         <!-- About -->
         <div class="nav-item px-3">
 
@@ -102,17 +144,47 @@
             </NavLink>
 
         </div>
-        
+
+
         <!-- My Account -->
         <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/account">
-                <i class="fas fa-user me-2" aria-hidden="true"></i> My Account
+
+            <NavLink class="nav-link"
+                     href="/account">
+
+                <i class="fas fa-user me-2" aria-hidden="true"></i>
+                My Account
+
             </NavLink>
+
         </div>
+
+
+        <!-- ===================================================== -->
+        <!-- ADMIN DASHBOARD -->
+        <!-- Only visible to Admin users -->
+        <!-- ===================================================== -->
+        @if (isAdmin)
+        {
+            <div class="nav-item px-3">
+
+                <NavLink class="nav-link"
+                         href="/admin">
+
+                    <i class="fas fa-tachometer-alt me-2"
+                       aria-hidden="true"></i>
+
+                    Dashboard
+
+                </NavLink>
+
+            </div>
+        }
 
     </nav>
 
 </div>
+
 
 @code {
 
@@ -121,15 +193,37 @@
     /// </summary>
     private int cartItemCount;
 
+
     /// <summary>
-    /// Initializes the navigation menu and subscribes to cart changes.
+    /// Indicates whether the currently authenticated user
+    /// belongs to the Admin role.
     /// </summary>
-    protected override void OnInitialized()
+    private bool isAdmin;
+
+
+    /// <summary>
+    /// Initializes the navigation menu, loads the current
+    /// user's role and subscribes to cart changes.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
     {
+        // Get current cart count.
         cartItemCount = CartService.GetItemCount();
 
+        // Get current authentication state.
+        var authState =
+            await AuthenticationStateProvider
+                .GetAuthenticationStateAsync();
+
+        var user = authState.User;
+
+        // Check whether the current user is an Admin.
+        isAdmin = user.IsInRole("Admin");
+
+        // Subscribe to cart changes.
         CartService.CartChanged += OnCartChanged;
     }
+
 
     /// <summary>
     /// Updates the cart count when the shopping cart changes.
@@ -141,8 +235,10 @@
         InvokeAsync(StateHasChanged);
     }
 
+
     /// <summary>
-    /// Unsubscribes from the cart service when the navigation menu is disposed.
+    /// Unsubscribes from the cart service when the
+    /// navigation menu is disposed.
     /// </summary>
     public void Dispose()
     {

@@ -1,4 +1,5 @@
 ﻿using DreysFashion.web.ViewModels;
+using Microsoft.AspNetCore.Components.Forms;
 
 namespace DreysFashion.web.Services.Interfaces
 {
@@ -20,12 +21,28 @@ namespace DreysFashion.web.Services.Interfaces
         /// <summary>
         /// Creates a new product.
         /// </summary>
-        Task<int> CreateProductAsync(ProductViewModel product);
+        /// <param name="product">
+        /// Product information.
+        /// </param>
+        /// <param name="imageFile">
+        /// Optional product image.
+        /// </param>
+        Task<int> CreateProductAsync(
+            ProductViewModel product,
+            IBrowserFile? imageFile = null);
 
         /// <summary>
         /// Updates an existing product.
         /// </summary>
-        Task<bool> UpdateProductAsync(ProductViewModel product);
+        /// <param name="product">
+        /// Updated product information.
+        /// </param>
+        /// <param name="imageFile">
+        /// Optional new product image.
+        /// </param>
+        Task<bool> UpdateProductAsync(
+            ProductViewModel product,
+            IBrowserFile? imageFile = null);
 
         /// <summary>
         /// Deletes a product.

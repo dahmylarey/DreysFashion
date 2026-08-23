@@ -1,9 +1,8 @@
 ﻿@page "/admin/products"
 @rendermode InteractiveServer
 
-@using DreysFashion.web.Models
-@using DreysFashion.web.Services.Interfaces
 @using DreysFashion.web.ViewModels
+@using DreysFashion.web.Services.Interfaces
 @using Microsoft.AspNetCore.Authorization
 
 @attribute [Authorize(Roles = "Admin")]
@@ -18,21 +17,39 @@
     <div class="page-header d-flex flex-column flex-md-row align-items-start justify-content-between gap-3">
 
         <div>
-            <p class="eyebrow text-muted">DREY'S FASHION</p>
-            <h1 class="h3 mb-1">Manage Products</h1>
-            <p class="text-muted mb-0">Add, edit and manage products in your store.</p>
+            <p class="eyebrow text-muted">
+                DREY'S FASHION
+            </p>
+
+            <h1 class="h3 mb-1">
+                Manage Products
+            </h1>
+
+            <p class="text-muted mb-0">
+                Add, edit and manage products in your store.
+            </p>
         </div>
 
         <div class="admin-toolbar d-flex gap-2 align-items-center">
-            <a href="/admin/products/add" class="btn btn-primary btn-sm d-flex align-items-center">
-                <i class="fas fa-plus me-2" aria-hidden="true"></i>
+
+            <a href="/admin/products/add"
+               class="btn btn-primary btn-sm d-flex align-items-center">
+
+                <i class="fas fa-plus me-2"></i>
+
                 Add Product
+
             </a>
 
-            <a href="/admin" class="btn btn-outline-secondary btn-sm d-flex align-items-center">
-                <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
+            <a href="/admin"
+               class="btn btn-outline-secondary btn-sm d-flex align-items-center">
+
+                <i class="fas fa-arrow-left me-2"></i>
+
                 Dashboard
+
             </a>
+
         </div>
 
     </div>
@@ -40,90 +57,197 @@
     @if (loading)
     {
         <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Loading...</span>
+
+            <div class="spinner-border text-primary"
+                 role="status">
+
+                <span class="visually-hidden">
+                    Loading...
+                </span>
+
             </div>
+
         </div>
     }
     else if (!products.Any())
     {
         <div class="d-flex align-items-center justify-content-center py-5">
+
             <div class="card text-center p-4">
+
                 <div class="card-body">
+
                     <i class="fas fa-box-open fa-2x text-muted mb-3"></i>
-                    <h5 class="card-title">No Products</h5>
-                    <p class="card-text text-muted">You haven't added any products yet.</p>
-                    <a href="/admin/products/add" class="btn btn-primary btn-sm">
-                        <i class="fas fa-plus me-2"></i> Add Your First Product
+
+                    <h5 class="card-title">
+                        No Products
+                    </h5>
+
+                    <p class="card-text text-muted">
+                        You haven't added any products yet.
+                    </p>
+
+                    <a href="/admin/products/add"
+                       class="btn btn-primary btn-sm">
+
+                        <i class="fas fa-plus me-2"></i>
+
+                        Add Your First Product
+
                     </a>
+
                 </div>
+
             </div>
+
         </div>
     }
     else
     {
         <div class="admin-product-table table-responsive">
+
             <table class="table table-hover align-middle">
+
                 <thead class="table-light">
+
                     <tr>
-                        <th scope="col">Product</th>
-                        <th scope="col">Price</th>
-                        <th scope="col">Stock</th>
-                        <th scope="col">Availability</th>
-                        <th scope="col" class="text-end">Actions</th>
+
+                        <th>
+                            Product
+                        </th>
+
+                        <th>
+                            Price
+                        </th>
+
+                        <th>
+                            Stock
+                        </th>
+
+                        <th>
+                            Availability
+                        </th>
+
+                        <th class="text-end">
+                            Actions
+                        </th>
+
                     </tr>
+
                 </thead>
 
                 <tbody>
+
                     @foreach (var product in products)
                     {
                         <tr>
+
                             <td>
+
                                 <div class="d-flex align-items-center gap-3">
+
                                     @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
                                     {
-                                        <img src="@product.ImageUrl" alt="@product.Name" class="product-thumb rounded" />
+                                        <img src="@product.ImageUrl"
+                                             alt="@product.Name"
+                                             class="product-thumb rounded"
+                                             style="width:60px;height:60px;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center"
+                                             style="width:60px;height:60px;">
+
+                                            <i class="fas fa-image text-muted"></i>
+
+                                        </div>
                                     }
 
                                     <div>
-                                        <div class="fw-semibold">@product.Name</div>
-                                        <div class="text-muted small">@product.Description</div>
+
+                                        <div class="fw-semibold">
+                                            @product.Name
+                                        </div>
+
+                                        <div class="text-muted small">
+                                            @product.Description
+                                        </div>
+
                                     </div>
+
                                 </div>
+
                             </td>
 
-                            <td>₦@product.Price.ToString("N0")</td>
-
-                            <td>@product.StockQuantity</td>
+                            <td>
+                                ₦@product.Price.ToString("N0")
+                            </td>
 
                             <td>
+                                @product.StockQuantity
+                            </td>
+
+                            <td>
+
                                 @if (product.IsAvailable)
                                 {
-                                    <span class="badge bg-success">Available</span>
+                                    <span class="badge bg-success">
+                                        Available
+                                    </span>
                                 }
                                 else
                                 {
-                                    <span class="badge bg-secondary">Unavailable</span>
+                                    <span class="badge bg-secondary">
+                                        Unavailable
+                                    </span>
                                 }
+
                             </td>
 
                             <td class="text-end">
+
                                 <div class="d-inline-flex gap-2">
-                                    <a href="/admin/products/edit/@product.Id" class="btn btn-sm btn-outline-primary" title="Edit">
+
+                                    <a href="/admin/products/edit/@product.Id"
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Edit">
+
                                         <i class="fas fa-edit"></i>
+
                                     </a>
 
-                                    <button class="btn btn-sm btn-danger d-flex align-items-center" title="Delete"
+                                    <button class="btn btn-sm btn-danger d-flex align-items-center"
+                                            title="Delete"
                                             @onclick="() => ConfirmDelete(product)">
-                                        <i class="fas fa-trash me-1"></i> 
-                                        <span class="d-none d-md-inline">Delete</span>
+
+                                        <i class="fas fa-trash me-1"></i>
+
+                                        <span class="d-none d-md-inline">
+                                            Delete
+                                        </span>
+
                                     </button>
+
                                 </div>
+
                             </td>
+
                         </tr>
                     }
+
                 </tbody>
+
             </table>
+
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert alert-danger mt-3">
+
+            @errorMessage
+
         </div>
     }
 
@@ -134,17 +258,27 @@
             <div class="delete-modal card p-4 shadow-sm">
 
                 <h5 class="mb-3">
+
                     <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+
                     Confirm Delete
+
                 </h5>
 
                 <p>
+
                     Are you sure you want to delete
-                    <strong>@productToDelete.Name</strong>?
+
+                    <strong>
+                        @productToDelete.Name
+                    </strong>?
+
                 </p>
 
                 <p class="text-danger">
+
                     This action cannot be undone.
+
                 </p>
 
                 <div class="admin-actions d-flex gap-2 justify-content-end mt-3">
@@ -185,13 +319,19 @@
 
 </div>
 
-
-
 @code {
 
     private List<ProductViewModel> products = new();
 
     private bool loading = true;
+
+    private ProductViewModel? productToDelete;
+
+    private bool showDeleteConfirmation;
+
+    private bool isDeleting;
+
+    private string? errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
@@ -202,49 +342,46 @@
     {
         loading = true;
 
-        products =
-            await ProductService.GetAllProductsAsync();
-
-        loading = false;
-    }
-
-    private async Task DeleteProduct(int productId)
-    {
         try
         {
-            await ProductService.DeleteProductAsync(productId);
+            products =
+                await ProductService
+                    .GetAllProductsAsync();
 
-            await LoadProducts();
+            errorMessage = null;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            // We will improve error handling later.
+            errorMessage =
+                $"Unable to load products: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
         }
     }
 
-    private ProductViewModel? productToDelete;
-
-    private bool showDeleteConfirmation;
-
-    private bool isDeleting;
-
-    private string? errorMessage;
-
-    private void ConfirmDelete(ProductViewModel product)
+    private void ConfirmDelete(
+        ProductViewModel product)
     {
         productToDelete = product;
+
         showDeleteConfirmation = true;
+
+        errorMessage = null;
     }
 
     private void CancelDelete()
     {
         productToDelete = null;
+
         showDeleteConfirmation = false;
     }
 
     private async Task DeleteConfirmed()
     {
-        if (productToDelete == null || isDeleting)
+        if (productToDelete == null ||
+            isDeleting)
         {
             return;
         }
@@ -253,10 +390,14 @@
         {
             isDeleting = true;
 
-            await ProductService.DeleteProductAsync(
-                productToDelete.Id);
+            errorMessage = null;
+
+            await ProductService
+                .DeleteProductAsync(
+                    productToDelete.Id);
 
             productToDelete = null;
+
             showDeleteConfirmation = false;
 
             await LoadProducts();
