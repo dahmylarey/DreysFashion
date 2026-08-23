@@ -1,4 +1,5 @@
-﻿@page "/shop"
+﻿```razor
+@page "/shop"
 @rendermode InteractiveServer
 
 @using DreysFashion.web.ViewModels
@@ -13,6 +14,7 @@
 <div class="page-container">
 
     <div class="page-header">
+
         <p class="eyebrow">
             DREY'S FASHION
         </p>
@@ -24,6 +26,7 @@
         <p>
             Explore our collection of carefully crafted fashion pieces.
         </p>
+
     </div>
 
     @if (products == null)
@@ -47,18 +50,21 @@
                          @onclick="() => OpenProduct(product.Id)">
 
                         <!-- Product Image -->
-                        <div class="product-image">
+                        <div class="product-image-container">
 
                             @if (!string.IsNullOrWhiteSpace(product.ImageUrl))
                             {
                                 <img src="@product.ImageUrl"
-                                     alt="@product.Name" />
+                                     alt="@product.Name"
+                                     class="product-shop-image" />
                             }
                             else
                             {
-                                <span>
-                                    @product.Name
-                                </span>
+                                <div class="product-image-placeholder">
+                                    <span>
+                                        @product.Name
+                                    </span>
+                                </div>
                             }
 
                         </div>
@@ -104,7 +110,8 @@
                     {
                         <button type="button"
                                 class="add-cart"
-                                @onclick="() => AddToCart(product)">
+                                @onclick="() => AddToCart(product)"
+                                @onclick:stopPropagation="true">
 
                             Add to Cart
 
@@ -171,3 +178,5 @@
         NavigationManager.NavigateTo($"/shop/{productId}");
     }
 }
+```
+the 
