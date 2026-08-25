@@ -1,0 +1,153 @@
+﻿@page "/admin/email-test"
+@rendermode InteractiveServer
+
+@using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize(Roles = "Admin")]
+
+@inject IEmailService EmailService
+
+<PageTitle>Email Test | Drey's Fashion</PageTitle>
+
+<div class="page-container">
+
+    <div class="page-header">
+
+        <p class="eyebrow">
+            DREY'S FASHION
+        </p>
+
+        <h1>
+            Email Test
+        </h1>
+
+        <p>
+            Test the Drey's Fashion email service.
+        </p>
+
+    </div>
+
+    <div class="card">
+
+        <div class="card-body">
+
+            <div class="form-group mb-3">
+
+                <label>
+                    Test Email Address
+                </label>
+
+                <input @bind="testEmail"
+                       type="email"
+                       class="form-control"
+                       placeholder="Enter email address" />
+
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(message))
+            {
+                <div class="alert @(success ? "alert-success" : "alert-danger")">
+                    @message
+                </div>
+            }
+
+            <button class="add-cart"
+                    @onclick="SendTestEmail"
+                    disabled="@sending">
+
+                @if (sending)
+                {
+                    <span>
+                        Sending...
+                    </span>
+                }
+                else
+                {
+                    <span>
+                        Send Test Email
+                    </span>
+                }
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+@code {
+
+    private string testEmail = string.Empty;
+
+    private string? message;
+
+    private bool success;
+
+    private bool sending;
+
+    private async Task SendTestEmail()
+    {
+        if (sending)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(testEmail))
+        {
+            success = false;
+            message = "Please enter an email address.";
+            return;
+        }
+
+        try
+        {
+            sending = true;
+            message = null;
+
+            await EmailService.SendAsync(
+                testEmail,
+                "Drey's Fashion - Email Test",
+                """
+                <div style="font-family: Arial, sans-serif;">
+
+                    <h2>Drey's Fashion</h2>
+
+                    <p>
+                        This is a test email from your
+                        Drey's Fashion application.
+                    </p>
+
+                    <p>
+                        If you received this email,
+                        your email service is working correctly.
+                    </p>
+
+                    <hr />
+
+                    <p>
+                        <strong>Drey's Fashion</strong>
+                    </p>
+
+                </div>
+                """);
+
+            success = true;
+
+            message =
+                "Test email sent successfully. Check the recipient inbox.";
+        }
+        catch (Exception ex)
+        {
+            success = false;
+
+            message =
+                $"Failed to send email: {ex.Message}";
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+}
