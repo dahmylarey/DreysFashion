@@ -1,12 +1,18 @@
 ﻿@page "/payment-callback"
 @rendermode InteractiveServer
 
+@using System.Security.Claims
 @using DreysFashion.web.Services.Interfaces
-@using DreysFashion.web.ViewModels
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
 
 @inject IPaymentService PaymentService
 @inject IOrderService OrderService
 @inject ICartService CartService
+@inject IEmailService EmailService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 
 <PageTitle>Payment Verification | Drey's Fashion</PageTitle>
@@ -120,12 +126,17 @@
     private string? errorMessage;
 
     /// <summary>
-    /// Verifies the Paystack transaction when the callback page loads.
+    /// Verifies the Paystack transaction and marks the
+    /// associated order as paid.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
         try
         {
+            // =====================================================
+            // VALIDATE PAYMENT REFERENCE
+            // =====================================================
+
             if (string.IsNullOrWhiteSpace(Reference))
             {
                 errorMessage =
@@ -134,7 +145,42 @@
                 return;
             }
 
-            // Verify the transaction with Paystack.
+
+            // =====================================================
+            // GET AUTHENTICATED USER
+            // =====================================================
+
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+            if (user?.Identity == null ||
+                !user.Identity.IsAuthenticated)
+            {
+                errorMessage =
+                    "You must be signed in to verify this payment.";
+
+                return;
+            }
+
+            var userId =
+                user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                errorMessage =
+                    "Unable to determine the authenticated customer.";
+
+                return;
+            }
+
+
+            // =====================================================
+            // VERIFY TRANSACTION WITH PAYSTACK
+            // =====================================================
+
             var transaction =
                 await PaymentService.VerifyPaymentAsync(Reference);
 
@@ -146,7 +192,11 @@
                 return;
             }
 
-            // The transaction must have a successful status.
+
+            // =====================================================
+            // CHECK PAYMENT STATUS
+            // =====================================================
+
             if (!string.Equals(
                     transaction.Status,
                     "success",
@@ -158,7 +208,11 @@
                 return;
             }
 
-            // Find our order using the Paystack reference.
+
+            // =====================================================
+            // FIND ORDER USING PAYMENT REFERENCE
+            // =====================================================
+
             var order =
                 await OrderService.GetOrderByPaymentReferenceAsync(
                     Reference);
@@ -171,7 +225,30 @@
                 return;
             }
 
-            // Verify that Paystack's amount matches our order.
+
+            // =====================================================
+            // SECURITY CHECK
+            // =====================================================
+
+            // Make sure the order actually belongs to
+            // the authenticated customer.
+
+            if (!string.Equals(
+                    order.UserId,
+                    userId,
+                    StringComparison.Ordinal))
+            {
+                errorMessage =
+                    "This payment does not belong to your account.";
+
+                return;
+            }
+
+
+            // =====================================================
+            // VERIFY PAYMENT AMOUNT
+            // =====================================================
+
             var expectedAmount =
                 Convert.ToInt64(order.TotalAmount * 100);
 
@@ -183,7 +260,11 @@
                 return;
             }
 
-            // Verify that the transaction is in Nigerian Naira.
+
+            // =====================================================
+            // VERIFY CURRENCY
+            // =====================================================
+
             if (!string.Equals(
                     transaction.Currency,
                     "NGN",
@@ -195,13 +276,189 @@
                 return;
             }
 
+
+            // =====================================================
+            // MARK ORDER AS PAID
+            // =====================================================
+
+            await OrderService.MarkOrderAsPaidAsync(order.Id);
+
+
+            // =====================================================
+            // CLEAR CART
+            // =====================================================
+
+            // Only clear the cart after the payment has
+            // successfully been verified and the order
+            // has been marked as paid.
+
+            CartService.ClearCart();
+
+
+            // =====================================================
+            // SEND CUSTOMER PAYMENT CONFIRMATION
+            // =====================================================
+
+            try
+            {
+                var customerBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>Payment Successful</h2>
+
+    <p>
+        Hello <strong>{order.CustomerName}</strong>,
+    </p>
+
+    <p>
+        Thank you for your order with
+        <strong>Drey's Fashion</strong>.
+    </p>
+
+    <p>
+        Your payment has been successfully verified.
+    </p>
+
+    <hr />
+
+    <p>
+        <strong>Order Number:</strong>
+        #{order.Id}
+    </p>
+
+    <p>
+        <strong>Amount Paid:</strong>
+        ₦{order.TotalAmount:N0}
+    </p>
+
+    <p>
+        <strong>Payment Reference:</strong>
+        {order.PaymentReference}
+    </p>
+
+    <p>
+        <strong>Order Status:</strong>
+        Paid
+    </p>
+
+    <hr />
+
+    <p>
+        We will begin processing your order shortly.
+    </p>
+
+    <p>
+        <strong>Drey's Fashion</strong>
+    </p>
+
+</body>
+</html>";
+
+                await EmailService.SendAsync(
+                    order.CustomerEmail,
+                    $"Payment Confirmed - Order #{order.Id}",
+                    customerBody,
+                    true);
+            }
+            catch
+            {
+                // Email failure must not make a successful
+                // payment appear unsuccessful.
+            }
+
+
+            // =====================================================
+            // SEND ADMIN NOTIFICATION
+            // =====================================================
+
+            try
+            {
+                // Change this to your actual admin email
+                // if it is different.
+
+                var adminEmail =
+                    "oladeleoluwada@gmail.com";
+
+                var adminBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>New Paid Order</h2>
+
+    <p>
+        A customer has successfully completed payment
+        for an order on <strong>Drey's Fashion</strong>.
+    </p>
+
+    <hr />
+
+    <p>
+        <strong>Order Number:</strong><br />
+        #{order.Id}
+    </p>
+
+    <p>
+        <strong>Customer:</strong><br />
+        {order.CustomerName}
+    </p>
+
+    <p>
+        <strong>Email:</strong><br />
+        {order.CustomerEmail}
+    </p>
+
+    <p>
+        <strong>Phone:</strong><br />
+        {order.CustomerPhone}
+    </p>
+
+    <p>
+        <strong>Delivery Address:</strong><br />
+        {order.DeliveryAddress}
+    </p>
+
+    <p>
+        <strong>Total Paid:</strong><br />
+        ₦{order.TotalAmount:N0}
+    </p>
+
+    <p>
+        <strong>Payment Reference:</strong><br />
+        {order.PaymentReference}
+    </p>
+
+    <hr />
+
+    <p>
+        The order has been marked as <strong>Paid</strong>
+        and stock has been updated.
+    </p>
+
+</body>
+</html>";
+
+                await EmailService.SendAsync(
+                    adminEmail,
+                    $"New Paid Order - #{order.Id}",
+                    adminBody,
+                    true);
+            }
+            catch
+            {
+                // Do not make the customer's payment appear
+                // unsuccessful because an admin email failed.
+            }
+
+
+            // =====================================================
+            // SUCCESS
+            // =====================================================
+
             orderId = order.Id;
             paymentSuccessful = true;
 
-            // Clear the cart only after successful payment.
-            CartService.ClearCart();
-
-            // Redirect to the existing order confirmation page.
+            // Redirect to the order confirmation page.
             NavigationManager.NavigateTo(
                 $"/order-confirmation/{order.Id}");
         }

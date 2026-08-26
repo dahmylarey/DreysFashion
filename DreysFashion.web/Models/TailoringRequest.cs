@@ -46,6 +46,22 @@
         public decimal? QuotedAmount { get; set; }
 
         /// <summary>
+        /// Gets or sets the Paystack payment reference
+        /// associated with this tailoring request.
+        /// </summary>
+        public string? PaymentReference { get; set; }
+
+        /// <summary>
+        /// Gets or sets the current payment status.
+        /// </summary>
+        public string PaymentStatus { get; set; } = "Unpaid";
+
+        /// <summary>
+        /// Gets or sets the date and time the tailoring request was paid.
+        /// </summary>
+        public DateTime? PaidAt { get; set; }
+
+        /// <summary>
         /// Gets or sets notes added by the admin.
         /// </summary>
         public string? AdminNotes { get; set; }

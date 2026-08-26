@@ -1,11 +1,14 @@
-﻿@page "/register"
+﻿```razor
+@page "/register"
 @rendermode InteractiveServer
 
 @using System.ComponentModel.DataAnnotations
 @using DreysFashion.web.Models
+@using DreysFashion.web.Services.Interfaces
 @using Microsoft.AspNetCore.Identity
 
 @inject UserManager<ApplicationUser> UserManager
+@inject IEmailService EmailService
 @inject NavigationManager NavigationManager
 
 <PageTitle>Create Account | Drey's Fashion</PageTitle>
@@ -56,7 +59,9 @@
 
                 <ValidationMessage For="@(() => model.FullName)" />
 
-            </div><br />
+            </div>
+
+            <br />
 
             <div class="form-group">
 
@@ -71,7 +76,9 @@
 
                 <ValidationMessage For="@(() => model.Email)" />
 
-            </div><br />
+            </div>
+
+            <br />
 
             <div class="form-group">
 
@@ -86,7 +93,9 @@
 
                 <ValidationMessage For="@(() => model.Password)" />
 
-            </div><br />
+            </div>
+
+            <br />
 
             <div class="form-group">
 
@@ -101,7 +110,9 @@
 
                 <ValidationMessage For="@(() => model.ConfirmPassword)" />
 
-            </div><br />
+            </div>
+
+            <br />
 
             <button type="submit"
                     class="add-cart"
@@ -116,7 +127,9 @@
                     <span>Create Account</span>
                 }
 
-            </button><br />
+            </button>
+
+            <br />
 
         </EditForm>
 
@@ -137,31 +150,29 @@
 
 @code {
 
-    /// <summary>
-    /// Stores the registration form information.
-    /// </summary>
     private RegisterModel model = new();
 
-    /// <summary>
-    /// Indicates whether registration is currently being processed.
-    /// </summary>
     private bool registering;
 
-    /// <summary>
-    /// Stores an error message when registration fails.
-    /// </summary>
     private string? errorMessage;
 
-    /// <summary>
-    /// Creates a new customer account.
-    /// </summary>
+
     private async Task HandleRegister()
     {
+        if (registering)
+        {
+            return;
+        }
+
         registering = true;
         errorMessage = null;
 
         try
         {
+            // =====================================================
+            // CREATE USER ACCOUNT
+            // =====================================================
+
             var user = new ApplicationUser
             {
                 UserName = model.Email,
@@ -170,27 +181,159 @@
                 CreatedAt = DateTime.UtcNow
             };
 
-            var result = await UserManager.CreateAsync(
-                user,
-                model.Password);
+            var result =
+                await UserManager.CreateAsync(
+                    user,
+                    model.Password);
 
-            if (result.Succeeded)
+
+            // =====================================================
+            // CHECK REGISTRATION RESULT
+            // =====================================================
+
+            if (!result.Succeeded)
             {
-                // Do NOT sign the user in here.
-                // The authentication cookie must be created
-                // during a normal HTTP request.
-
-                NavigationManager.NavigateTo(
-                    "/login?registered=true",
-                    forceLoad: true);
+                errorMessage =
+                    string.Join(
+                        " ",
+                        result.Errors.Select(
+                            error => error.Description));
 
                 return;
             }
 
-            errorMessage = string.Join(
-                " ",
-                result.Errors.Select(
-                    error => error.Description));
+
+            // =====================================================
+            // CUSTOMER WELCOME EMAIL
+            // =====================================================
+
+            try
+            {
+                var customerBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>Welcome to Drey's Fashion, {model.FullName}!</h2>
+
+    <p>
+        Thank you for creating your account with
+        <strong>Drey's Fashion</strong>.
+    </p>
+
+    <p>
+        Your account has been successfully created.
+    </p>
+
+    <p>
+        You can now sign in and:
+    </p>
+
+    <ul>
+        <li>Browse our fashion collection</li>
+        <li>Place orders</li>
+        <li>Track your orders</li>
+        <li>Submit custom tailoring requests</li>
+        <li>Manage your measurements</li>
+    </ul>
+
+    <p>
+        We look forward to serving you.
+    </p>
+
+    <p>
+        <strong>Drey's Fashion</strong>
+    </p>
+
+</body>
+</html>";
+
+                await EmailService.SendAsync(
+                    model.Email,
+                    "Welcome to Drey's Fashion",
+                    customerBody,
+                    true);
+            }
+            catch
+            {
+                // Do not prevent account creation
+                // if email delivery fails.
+            }
+
+
+            // =====================================================
+            // ADMIN NOTIFICATION
+            // =====================================================
+
+            try
+            {
+                // CHANGE THIS TO YOUR ADMIN EMAIL ADDRESS.
+                var adminEmail = "oladeleoluwada@gmail.com";
+
+                var adminBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>New Customer Registration</h2>
+
+    <p>
+        A new customer has registered on
+        <strong>Drey's Fashion</strong>.
+    </p>
+
+    <hr />
+
+    <p>
+        <strong>Customer Name:</strong><br />
+        {model.FullName}
+    </p>
+
+    <p>
+        <strong>Email Address:</strong><br />
+        {model.Email}
+    </p>
+
+    <p>
+        <strong>Registration Date:</strong><br />
+        {DateTime.Now:dd MMMM yyyy, hh:mm tt}
+    </p>
+
+    <hr />
+
+    <p>
+        You can now review the customer from the
+        Drey's Fashion admin dashboard.
+    </p>
+
+</body>
+</html>";
+
+                await EmailService.SendAsync(
+                    adminEmail,
+                    $"New Customer - {model.FullName}",
+                    adminBody,
+                    true);
+            }
+            catch
+            {
+                // Do not prevent account creation
+                // if admin notification fails.
+            }
+
+
+            // =====================================================
+            // REDIRECT TO LOGIN
+            // =====================================================
+
+            // Do NOT sign the customer in here.
+            //
+            // The login page is responsible for creating
+            // the authentication cookie.
+
+            NavigationManager.NavigateTo(
+                "/login?registered=true",
+                forceLoad: true);
+
+            return;
         }
         catch (Exception ex)
         {
@@ -203,37 +346,35 @@
         }
     }
 
-    /// <summary>
-    /// Represents the customer registration form.
-    /// </summary>
+
+    // =========================================================
+    // REGISTRATION MODEL
+    // =========================================================
+
     private sealed class RegisterModel
     {
-        /// <summary>
-        /// Gets or sets the customer's full name.
-        /// </summary>
         [Required(
-            ErrorMessage = "Please enter your full name.")]
+            ErrorMessage =
+                "Please enter your full name.")]
         [StringLength(
             100,
             MinimumLength = 2,
             ErrorMessage =
                 "Full name must be between 2 and 100 characters.")]
-        public string FullName { get; set; } = string.Empty;
+        public string FullName { get; set; } =
+            string.Empty;
 
-        /// <summary>
-        /// Gets or sets the customer's email address.
-        /// </summary>
+
         [Required(
             ErrorMessage =
                 "Please enter your email address.")]
         [EmailAddress(
             ErrorMessage =
                 "Please enter a valid email address.")]
-        public string Email { get; set; } = string.Empty;
+        public string Email { get; set; } =
+            string.Empty;
 
-        /// <summary>
-        /// Gets or sets the customer's password.
-        /// </summary>
+
         [Required(
             ErrorMessage =
                 "Please enter a password.")]
@@ -242,11 +383,10 @@
             MinimumLength = 6,
             ErrorMessage =
                 "Password must be at least 6 characters.")]
-        public string Password { get; set; } = string.Empty;
+        public string Password { get; set; } =
+            string.Empty;
 
-        /// <summary>
-        /// Gets or sets the password confirmation.
-        /// </summary>
+
         [Required(
             ErrorMessage =
                 "Please confirm your password.")]
@@ -254,6 +394,8 @@
             nameof(Password),
             ErrorMessage =
                 "The passwords do not match.")]
-        public string ConfirmPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } =
+            string.Empty;
     }
 }
+```

@@ -12,14 +12,22 @@ namespace DreysFashion.web.Services
     public class OrderService : IOrderService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IEmailService _emailService;
+
+        // Change this to your actual admin email.
+        private const string AdminEmail =
+            "oladeleoluwada@gmail.com";
 
         /// <summary>
         /// Initializes a new instance of the
         /// <see cref="OrderService"/> class.
         /// </summary>
-        public OrderService(ApplicationDbContext context)
+        public OrderService(
+            ApplicationDbContext context,
+            IEmailService emailService)
         {
             _context = context;
+            _emailService = emailService;
         }
 
 
@@ -28,8 +36,7 @@ namespace DreysFashion.web.Services
         // ============================================================
 
         /// <summary>
-        /// Creates a new order for the authenticated customer
-        /// using the customer's checkout information and cart items.
+        /// Creates a new order for the authenticated customer.
         /// </summary>
         public async Task<int> CreateOrderAsync(
             string userId,
@@ -49,7 +56,7 @@ namespace DreysFashion.web.Services
             }
 
             // --------------------------------------------------------
-            // Validate every cart item before creating the order.
+            // Validate every cart item.
             // --------------------------------------------------------
 
             foreach (var cartItem in cartItems)
@@ -85,7 +92,7 @@ namespace DreysFashion.web.Services
             }
 
             // --------------------------------------------------------
-            // Create the order.
+            // Create order.
             // --------------------------------------------------------
 
             var order = new Order
@@ -102,8 +109,7 @@ namespace DreysFashion.web.Services
             };
 
             // --------------------------------------------------------
-            // Calculate the order total using the CURRENT
-            // product prices from the database.
+            // Calculate total using current database prices.
             // --------------------------------------------------------
 
             foreach (var cartItem in cartItems)
@@ -119,18 +125,11 @@ namespace DreysFashion.web.Services
                 {
                     ProductId = product.Id,
                     Quantity = cartItem.Quantity,
-
-                    // Store the actual database price
-                    // at the time of purchase.
                     UnitPrice = product.Price
                 };
 
                 order.OrderItems.Add(orderItem);
             }
-
-            // --------------------------------------------------------
-            // Add the complete order to the database.
-            // --------------------------------------------------------
 
             _context.Orders.Add(order);
 
@@ -144,9 +143,6 @@ namespace DreysFashion.web.Services
         // GET ORDER BY ID
         // ============================================================
 
-        /// <summary>
-        /// Retrieves an order together with its products.
-        /// </summary>
         public async Task<Order?> GetOrderByIdAsync(int orderId)
         {
             return await _context.Orders
@@ -161,10 +157,6 @@ namespace DreysFashion.web.Services
         // GET ORDER BY ID FOR USER
         // ============================================================
 
-        /// <summary>
-        /// Retrieves an order only when it belongs to
-        /// the specified authenticated customer.
-        /// </summary>
         public async Task<Order?> GetOrderByIdForUserAsync(
             int orderId,
             string userId)
@@ -187,9 +179,6 @@ namespace DreysFashion.web.Services
         // SET PAYMENT REFERENCE
         // ============================================================
 
-        /// <summary>
-        /// Associates a Paystack payment reference with an order.
-        /// </summary>
         public async Task SetPaymentReferenceAsync(
             int orderId,
             string paymentReference)
@@ -201,7 +190,7 @@ namespace DreysFashion.web.Services
             if (order == null)
             {
                 throw new InvalidOperationException(
-                    $"Order with ID {orderId} was not found.");
+                    $"Order {orderId} was not found.");
             }
 
             order.PaymentReference = paymentReference;
@@ -211,23 +200,11 @@ namespace DreysFashion.web.Services
 
 
         // ============================================================
-        // MARK ORDER AS PAID + DEDUCT STOCK
+        // MARK ORDER AS PAID
         // ============================================================
 
-        /// <summary>
-        /// Marks an order as paid and deducts the purchased quantities
-        /// from product inventory.
-        ///
-        /// If the order has already been paid, no changes are made.
-        /// This prevents stock from being deducted more than once.
-        /// </summary>
         public async Task MarkOrderAsPaidAsync(int orderId)
         {
-            // --------------------------------------------------------
-            // Load the order together with its order items
-            // and their associated products.
-            // --------------------------------------------------------
-
             var order = await _context.Orders
                 .Include(order => order.OrderItems)
                 .ThenInclude(item => item.Product)
@@ -237,17 +214,10 @@ namespace DreysFashion.web.Services
             if (order == null)
             {
                 throw new InvalidOperationException(
-                    $"Order with ID {orderId} was not found.");
+                    $"Order {orderId} was not found.");
             }
 
-            // --------------------------------------------------------
-            // IMPORTANT:
-            // If the order is already paid, do nothing.
-            //
-            // This prevents stock from being deducted twice if
-            // Paystack verification happens more than once.
-            // --------------------------------------------------------
-
+            // Prevent duplicate stock deduction.
             if (string.Equals(
                     order.Status,
                     "Paid",
@@ -257,7 +227,7 @@ namespace DreysFashion.web.Services
             }
 
             // --------------------------------------------------------
-            // Validate ALL stock before changing ANY stock.
+            // Validate all stock before changing anything.
             // --------------------------------------------------------
 
             foreach (var orderItem in order.OrderItems)
@@ -285,8 +255,7 @@ namespace DreysFashion.web.Services
             }
 
             // --------------------------------------------------------
-            // All stock is available.
-            // Deduct the purchased quantities.
+            // Deduct stock.
             // --------------------------------------------------------
 
             foreach (var orderItem in order.OrderItems)
@@ -295,26 +264,151 @@ namespace DreysFashion.web.Services
 
                 product.StockQuantity -= orderItem.Quantity;
 
-                // Automatically disable the product when
-                // no units remain.
+                // Correct: stock should be zero when sold out.
                 if (product.StockQuantity <= 0)
                 {
-                    product.StockQuantity = 1;
+                    product.StockQuantity = 0;
                     product.IsAvailable = false;
                 }
             }
 
-            // --------------------------------------------------------
-            // Mark the order as paid.
-            // --------------------------------------------------------
-
             order.Status = "Paid";
 
+            await _context.SaveChangesAsync();
+
             // --------------------------------------------------------
-            // Save BOTH the stock changes and the order status.
+            // Payment confirmation emails.
             // --------------------------------------------------------
 
-            await _context.SaveChangesAsync();
+            await SendPaymentConfirmationEmailsAsync(order);
+        }
+
+
+        // ============================================================
+        // PAYMENT CONFIRMATION EMAILS
+        // ============================================================
+
+        private async Task SendPaymentConfirmationEmailsAsync(
+            Order order)
+        {
+            // Customer email
+            try
+            {
+                var customerBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>Payment Successful 🎉</h2>
+
+    <p>
+        Hello <strong>{order.CustomerName}</strong>,
+    </p>
+
+    <p>
+        Your payment for order
+        <strong>#{order.Id}</strong>
+        has been successfully received.
+    </p>
+
+    <p>
+        <strong>Amount Paid:</strong>
+        ₦{order.TotalAmount:N0}
+    </p>
+
+    <p>
+        <strong>Order Status:</strong>
+        Payment Confirmed
+    </p>
+
+    <p>
+        We have received your order and will begin processing it shortly.
+    </p>
+
+    <p>
+        Thank you for shopping with
+        <strong>Drey's Fashion</strong>.
+    </p>
+
+</body>
+</html>";
+
+                await _emailService.SendAsync(
+                    order.CustomerEmail,
+                    $"Payment Confirmed - Order #{order.Id}",
+                    customerBody,
+                    true);
+            }
+            catch
+            {
+                // Email failure must not break payment processing.
+            }
+
+
+            // Admin email
+            try
+            {
+                var adminBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>Payment Received</h2>
+
+    <p>
+        Payment has been successfully confirmed for
+        <strong>Order #{order.Id}</strong>.
+    </p>
+
+    <hr />
+
+    <p>
+        <strong>Customer:</strong><br />
+        {order.CustomerName}
+    </p>
+
+    <p>
+        <strong>Email:</strong><br />
+        {order.CustomerEmail}
+    </p>
+
+    <p>
+        <strong>Phone:</strong><br />
+        {order.CustomerPhone}
+    </p>
+
+    <p>
+        <strong>Amount:</strong><br />
+        ₦{order.TotalAmount:N0}
+    </p>
+
+    <p>
+        <strong>Payment Reference:</strong><br />
+        {order.PaymentReference}
+    </p>
+
+    <p>
+        <strong>Delivery Address:</strong><br />
+        {order.DeliveryAddress}
+    </p>
+
+    <hr />
+
+    <p>
+        The order is now ready for processing.
+    </p>
+
+</body>
+</html>";
+
+                await _emailService.SendAsync(
+                    AdminEmail,
+                    $"Payment Received - Order #{order.Id}",
+                    adminBody,
+                    true);
+            }
+            catch
+            {
+                // Email failure must not break payment processing.
+            }
         }
 
 
@@ -322,9 +416,6 @@ namespace DreysFashion.web.Services
         // GET ORDER BY PAYMENT REFERENCE
         // ============================================================
 
-        /// <summary>
-        /// Retrieves an order using its Paystack payment reference.
-        /// </summary>
         public async Task<Order?> GetOrderByPaymentReferenceAsync(
             string paymentReference)
         {
@@ -340,9 +431,6 @@ namespace DreysFashion.web.Services
         // GET ORDERS BY CUSTOMER EMAIL
         // ============================================================
 
-        /// <summary>
-        /// Retrieves all orders associated with a customer's email.
-        /// </summary>
         public async Task<List<Order>> GetOrdersByCustomerEmailAsync(
             string email)
         {
@@ -359,9 +447,6 @@ namespace DreysFashion.web.Services
         // GET ORDERS BY USER ID
         // ============================================================
 
-        /// <summary>
-        /// Retrieves all orders belonging to a specific authenticated user.
-        /// </summary>
         public async Task<List<Order>> GetOrdersByUserIdAsync(
             string userId)
         {
@@ -383,9 +468,6 @@ namespace DreysFashion.web.Services
         // GET ALL ORDERS
         // ============================================================
 
-        /// <summary>
-        /// Retrieves all orders in the system.
-        /// </summary>
         public async Task<List<Order>> GetAllOrdersAsync()
         {
             return await _context.Orders
@@ -401,9 +483,6 @@ namespace DreysFashion.web.Services
         // UPDATE ORDER STATUS
         // ============================================================
 
-        /// <summary>
-        /// Updates the status of an existing order.
-        /// </summary>
         public async Task<bool> UpdateOrderStatusAsync(
             int orderId,
             string status)
@@ -420,6 +499,56 @@ namespace DreysFashion.web.Services
             order.Status = status;
 
             await _context.SaveChangesAsync();
+
+            // --------------------------------------------------------
+            // Notify customer whenever admin changes order status.
+            // --------------------------------------------------------
+
+            try
+            {
+                var customerBody = $@"
+<html>
+<body style=""font-family:Arial,sans-serif;"">
+
+    <h2>Order Update</h2>
+
+    <p>
+        Hello <strong>{order.CustomerName}</strong>,
+    </p>
+
+    <p>
+        There has been an update to your
+        <strong>Drey's Fashion</strong> order.
+    </p>
+
+    <p>
+        <strong>Order Number:</strong>
+        #{order.Id}
+    </p>
+
+    <p>
+        <strong>New Status:</strong>
+        {status}
+    </p>
+
+    <p>
+        Thank you for shopping with
+        <strong>Drey's Fashion</strong>.
+    </p>
+
+</body>
+</html>";
+
+                await _emailService.SendAsync(
+                    order.CustomerEmail,
+                    $"Order #{order.Id} Update - {status}",
+                    customerBody,
+                    true);
+            }
+            catch
+            {
+                // Email failure must not break status updates.
+            }
 
             return true;
         }

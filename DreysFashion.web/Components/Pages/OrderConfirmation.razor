@@ -1,11 +1,16 @@
 ﻿@page "/order-confirmation/{id:int}"
 @rendermode InteractiveServer
 
+@using System.Security.Claims
 @using DreysFashion.web.Models
 @using DreysFashion.web.Services.Interfaces
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+@attribute [Authorize]
 
 @inject IOrderService OrderService
-@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Order Confirmation | Drey's Fashion</PageTitle>
 
@@ -14,7 +19,19 @@
     @if (loading)
     {
         <div class="page-header">
-            <p>Loading your order...</p>
+
+            <p class="eyebrow">
+                DREY'S FASHION
+            </p>
+
+            <h1>
+                Loading Your Order
+            </h1>
+
+            <p>
+                Please wait while we load your order details...
+            </p>
+
         </div>
     }
     else if (order == null)
@@ -43,6 +60,7 @@
     {
         <div class="order-confirmation">
 
+            <!-- Confirmation Header -->
             <div class="confirmation-header">
 
                 <div class="confirmation-icon">
@@ -57,9 +75,22 @@
                     Thank You For Your Order!
                 </h1>
 
-                <p>
-                    Your order has been received successfully.
-                </p>
+                @if (string.Equals(
+                    order.Status,
+                    "Paid",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    <p>
+                        Your payment has been successfully verified
+                        and your order has been received.
+                    </p>
+                }
+                else
+                {
+                    <p>
+                        Your order has been received successfully.
+                    </p>
+                }
 
                 <strong>
                     Order #@order.Id
@@ -67,12 +98,16 @@
 
             </div>
 
+
+            <!-- Order Summary -->
             <div class="order-summary">
 
                 <h2>
                     Order Details
                 </h2>
 
+
+                <!-- Customer Details -->
                 <div class="order-customer-details">
 
                     <p>
@@ -97,8 +132,11 @@
 
                 </div>
 
+
                 <hr />
 
+
+                <!-- Order Items -->
                 <h3>
                     Items
                 </h3>
@@ -127,20 +165,37 @@
                     </div>
                 }
 
+
                 <hr />
 
+
+                <!-- Order Status -->
                 <div class="summary-row">
 
                     <span>
                         Order Status
                     </span>
 
-                    <strong>
-                        @order.Status
-                    </strong>
+                    @if (string.Equals(
+                        order.Status,
+                        "Paid",
+                        StringComparison.OrdinalIgnoreCase))
+                    {
+                        <strong class="text-success">
+                            Paid
+                        </strong>
+                    }
+                    else
+                    {
+                        <strong>
+                            @order.Status
+                        </strong>
+                    }
 
                 </div>
 
+
+                <!-- Order Total -->
                 <div class="summary-total">
 
                     <span>
@@ -151,10 +206,14 @@
                         ₦@order.TotalAmount.ToString("N0")
                     </strong>
 
-                </div><br />
+                </div>
+
+                <br />
 
             </div>
 
+
+            <!-- Actions -->
             <div class="confirmation-actions">
 
                 <a href="/shop" class="add-cart">
@@ -176,23 +235,81 @@
     [Parameter]
     public int id { get; set; }
 
+
     /// <summary>
     /// Stores the order being displayed.
     /// </summary>
     private Order? order;
+
 
     /// <summary>
     /// Indicates whether the order is currently being loaded.
     /// </summary>
     private bool loading = true;
 
+
     /// <summary>
-    /// Loads the requested order when the confirmation page initializes.
+    /// Loads the requested order only when it belongs
+    /// to the currently authenticated customer.
     /// </summary>
     protected override async Task OnInitializedAsync()
     {
-        order = await OrderService.GetOrderByIdAsync(id);
+        try
+        {
+            // =====================================================
+            // GET AUTHENTICATION STATE
+            // =====================================================
 
-        loading = false;
+            var authState =
+                await AuthenticationStateProvider
+                    .GetAuthenticationStateAsync();
+
+            var user = authState.User;
+
+
+            // =====================================================
+            // MAKE SURE USER IS AUTHENTICATED
+            // =====================================================
+
+            if (user?.Identity == null ||
+                !user.Identity.IsAuthenticated)
+            {
+                order = null;
+                return;
+            }
+
+
+            // =====================================================
+            // GET AUTHENTICATED USER ID
+            // =====================================================
+
+            var userId =
+                user.FindFirst(
+                    ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                order = null;
+                return;
+            }
+
+
+            // =====================================================
+            // GET ORDER ONLY IF IT BELONGS TO THIS USER
+            // =====================================================
+
+            order =
+                await OrderService.GetOrderByIdForUserAsync(
+                    id,
+                    userId);
+        }
+        catch
+        {
+            order = null;
+        }
+        finally
+        {
+            loading = false;
+        }
     }
 }
