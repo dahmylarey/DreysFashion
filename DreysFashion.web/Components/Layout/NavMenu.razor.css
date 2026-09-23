@@ -1,18 +1,22 @@
 .site-navbar {
     background: linear-gradient(90deg, rgba(5,39,103,1) 0%, rgba(58,6,71,1) 100%);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    padding: 0.75rem 0;
+    padding: 0.25rem 0;
     min-height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 999;
 }
 
 /* ===== BRAND ===== */
 .site-navbar .navbar-brand {
     color: #ffffff !important;
-    font-size: 1.5rem;
+    font-size: 1.1rem;
     font-weight: 700;
     text-decoration: none;
-    margin-right: 2rem;
+    margin-right: 1rem;
     letter-spacing: 0.5px;
+    padding: 0.25rem 0 !important;
 }
 
     .site-navbar .navbar-brand:hover {
@@ -30,10 +34,11 @@
     position: relative;
     transition: all 0.3s ease;
     white-space: nowrap;
-    padding: 0.5rem 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
     height: auto;
-    line-height: 1.5;
+    line-height: 1.2;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    font-size: 0.85rem;
 }
 
     .site-navbar .nav-link:hover {
@@ -124,13 +129,15 @@
 }
 
 .site-navbar .search-navbar {
-    min-width: 200px;
+    min-width: 140px;
+    max-width: 180px;
     background-color: rgba(255, 255, 255, 0.12);
     border: 1.5px solid rgba(255, 255, 255, 0.3);
     color: #ffffff !important;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 500;
     transition: all 0.3s ease;
+    padding: 0.2rem 0.5rem !important;
 }
 
     .site-navbar .search-navbar::placeholder {
