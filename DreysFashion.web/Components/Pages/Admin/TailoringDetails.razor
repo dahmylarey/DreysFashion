@@ -141,9 +141,7 @@
 
                     <p>
                         <strong>Submitted:</strong>
-                        @request.CreatedAt
-                        .ToLocalTime()
-                        .ToString("dd MMM yyyy, hh:mm tt")
+                        @(request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt"))
                     </p>
 
                     <p>

@@ -98,9 +98,7 @@
                             </span>
 
                             <strong>
-                                @order.CreatedAt
-                                .ToLocalTime()
-                                .ToString("dd MMM yyyy")
+                                @(order.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))
                             </strong>
                         </div>
 

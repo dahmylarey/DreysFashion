@@ -452,9 +452,7 @@
 
                                     <td>
 
-                                        @order.CreatedAt
-                                        .ToLocalTime()
-                                        .ToString("dd MMM yyyy")
+                                        @(order.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))
 
                                     </td>
 
@@ -574,9 +572,7 @@
 
                                     <td>
 
-                                        @request.CreatedAt
-                                        .ToLocalTime()
-                                        .ToString("dd MMM yyyy")
+                                        @(request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))
 
                                     </td>
 

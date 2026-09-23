@@ -105,8 +105,7 @@
                             </span>
 
                             <strong>
-                                @request.CreatedAt.ToLocalTime()
-                                .ToString("dd MMM yyyy, hh:mm tt")
+                                @(request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt"))
                             </strong>
                         </div>
 
@@ -190,7 +189,7 @@
                 </div>
             }
 
-        </div>
+        </div><br />
 
         <div class="confirmation-actions">
 

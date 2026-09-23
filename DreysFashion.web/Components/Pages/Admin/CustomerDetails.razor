@@ -157,9 +157,7 @@
                                 </div>
 
                                 <div class="fw-semibold">
-                                    @customer.CreatedAt
-                                    .ToLocalTime()
-                                    .ToString("dd MMMM yyyy")
+                                    @(customer.CreatedAt.ToLocalTime().ToString("dd MMMM yyyy"))
                                 </div>
 
                             </div>
@@ -301,9 +299,7 @@
                                         </td>
 
                                         <td>
-                                            @order.CreatedAt
-                                            .ToLocalTime()
-                                            .ToString("dd MMM yyyy")
+                                            @(order.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))
                                         </td>
 
                                         <td>

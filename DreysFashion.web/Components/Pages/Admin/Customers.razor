@@ -185,9 +185,7 @@
                             </td>
 
                             <td>
-                                @customer.CreatedAt
-                                .ToLocalTime()
-                                .ToString("dd MMM yyyy")
+                                @(customer.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))
                             </td>
 
                             <td class="text-end">

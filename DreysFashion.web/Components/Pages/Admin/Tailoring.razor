@@ -249,9 +249,7 @@
 
                                 <td>
 
-                                    @request.CreatedAt
-                                        .ToLocalTime()
-                                        .ToString("dd MMM yyyy")
+                                    @(request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy"))
 
                                 </td>
 
