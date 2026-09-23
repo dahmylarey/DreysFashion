@@ -6,252 +6,188 @@
 
 @inject ICartService CartService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
 
-<div class="top-row ps-3 navbar navbar-dark">
+<nav class="navbar navbar-expand-lg site-navbar">
     <div class="container-fluid">
 
-        <a class="navbar-brand" href="">
-            DreysFashion
+        <!-- Brand -->
+        <a class="navbar-brand fw-bold" href="/">
+            <i class="fas fa-shirt me-2"></i>DreysFashion
         </a>
 
-    </div>
-</div>
+        <!-- Toggler Button for Mobile -->
+        <button class="navbar-toggler" type="button" @onclick="ToggleNavbar" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
-<input type="checkbox"
-       title="Navigation menu"
-       class="navbar-toggler" />
+        <!-- Navbar Items -->
+        <div class="@("collapse navbar-collapse " + (navbarOpen ? "show" : ""))">
+            <ul class="navbar-nav ms-auto">
 
-<div class="nav-scrollable"
-     onclick="document.querySelector('.navbar-toggler').click()">
-
-    <nav class="nav flex-column">
-
-        <!-- ===================================================== -->
-        <!-- ADMIN DASHBOARD -->
-        <!-- Only visible to Admin users -->
-        <!-- ===================================================== -->
-        @if (isAdmin)
-        {
-            <div class="nav-item px-3">
-
-                <NavLink class="nav-link"
-                         href="/admin">
-
-                    <i class="fas fa-tachometer-alt me-2"
-                       aria-hidden="true"></i>
-
-                    Dashboard
-
-                </NavLink>
-
-            </div>
-        }
-
-
-        <!-- Home -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/"
-                     Match="NavLinkMatch.All">
-
-                <i class="fas fa-home me-2" aria-hidden="true"></i>
-                Home
-
-            </NavLink>
-
-        </div>
-
-
-        <!-- Shop -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/shop">
-
-                <i class="fas fa-store me-2" aria-hidden="true"></i>
-                Shop
-
-            </NavLink>
-
-        </div>
-
-
-        <!-- Cart -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/cart">
-
-                <i class="fas fa-shopping-cart me-2" aria-hidden="true"></i>
-                Cart
-
-                @if (cartItemCount > 0)
+                <!-- Admin Dashboard (Only for Admins) -->
+                @if (isAdmin)
                 {
-                    <span class="cart-count">
-                        @cartItemCount
-                    </span>
+                    <li class="nav-item">
+                        <NavLink class="nav-link text-white" href="/admin">
+                            <i class="fas fa-tachometer-alt me-1"></i>
+                            Dashboard
+                        </NavLink>
+                    </li>
                 }
 
-            </NavLink>
+                <!-- Home -->
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="/" Match="NavLinkMatch.All">
+                        <i class="fas fa-home me-1"></i>
+                        Home
+                    </NavLink>
+                </li>
 
+                <!-- Shop -->
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="/shop">
+                        <i class="fas fa-store me-1"></i>
+                        Shop
+                    </NavLink>
+                </li>
+
+                <!-- My Orders -->
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="/my-orders">
+                        <i class="fas fa-box me-1"></i>
+                        My Orders
+                    </NavLink>
+                </li>
+
+                <!-- Custom Tailoring Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white" href="#" role="button" @onclick="ToggleTailoringDropdown" @onclick:preventDefault>
+                        <i class="fas fa-scissors me-1"></i>
+                        Custom Tailoring
+                    </a>
+                    @if (tailoringDropdownOpen)
+                    {
+                        <ul class="dropdown-menu dropdown-menu-end show">
+                            <li>
+                                <NavLink class="dropdown-item" href="/my-measurements">
+                                    <i class="bi bi-rulers me-1"></i>
+                                    My Measurements
+                                </NavLink>
+                            </li>
+                            <li>
+                                <NavLink class="dropdown-item" href="/my-tailoring-requests">
+                                    <i class="bi bi-list-check me-1"></i>
+                                    My Tailoring Requests
+                                </NavLink>
+                            </li>
+                        </ul>
+                    }
+                </li>
+
+                <!-- My Account -->
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="/account">
+                        <i class="fas fa-user me-1"></i>
+                        My Account
+                    </NavLink>
+                </li>
+
+                <!-- About -->
+                <li class="nav-item">
+                    <NavLink class="nav-link text-white" href="/about">
+                        <i class="fas fa-info-circle me-1"></i>
+                        About
+                    </NavLink>
+                </li>
+
+                <!-- Cart with Badge -->
+                <li class="nav-item ms-3">
+                    <a class="nav-link position-relative text-white" href="/cart">
+                        <i class="fas fa-shopping-cart"></i>
+                        @if (cartItemCount > 0)
+                        {
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                @cartItemCount
+                            </span>
+                        }
+                    </a>
+                </li>
+            </ul>
+
+            <!-- Search Bar -->
+            <div class="ms-3 search-container">
+                <input type="text" 
+                       class="form-control form-control-sm search-navbar" 
+                       placeholder="Search products..." 
+                       @bind="searchQuery"
+                       @onkeyup="HandleSearch" />
+            </div>
         </div>
-
-
-        <!-- My Orders -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/my-orders">
-
-                <i class="fas fa-box me-2" aria-hidden="true"></i>
-                My Orders
-
-            </NavLink>
-
-        </div>
-
-
-        <!-- Custom Tailoring (with dropdown) -->
-        <div class="nav-item px-3">
-
-            <a class="nav-link nav-link-toggle"
-               role="button"
-               @onclick="ToggleTailoringMenu">
-
-                <i class="fas fa-scissors me-2" aria-hidden="true"></i>
-                Custom Tailoring
-
-                <i class="fas fa-chevron-down ms-auto caret-icon @(tailoringMenuOpen ? "open" : "")" aria-hidden="true"></i>
-
-            </a>
-
-            @if (tailoringMenuOpen)
-            {
-                <div class="sub-nav">
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link"
-                                 href="/my-measurements">
-
-                            <i class="bi bi-rulers me-2"></i>
-                            My Measurements
-
-                        </NavLink>
-                    </div><br />
-
-                    <div class="nav-item px-3">
-                        <NavLink class="nav-link"
-                                 href="/my-tailoring-requests">
-
-                            <i class="bi bi-list-check me-2"></i>
-                            My Tailoring Requests
-
-                        </NavLink>
-                    </div>
-                </div>
-            }
-
-        </div>
-
-        
-        <!-- My Account -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/account">
-
-                <i class="fas fa-user me-2" aria-hidden="true"></i>
-                My Account
-
-            </NavLink>
-
-        </div>
-
-                
-        <!-- About -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/about">
-
-                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
-                About
-
-            </NavLink>
-
-        </div>
-
-    </nav>
-
-</div>
+    </div>
+</nav>
 
 
 @code {
-
-    /// <summary>
-    /// Stores the current number of products in the shopping cart.
-    /// </summary>
     private int cartItemCount;
-
-
-    /// <summary>
-    /// Indicates whether the currently authenticated user
-    /// belongs to the Admin role.
-    /// </summary>
     private bool isAdmin;
+    private bool navbarOpen;
+    private bool tailoringDropdownOpen;
+    private string searchQuery = "";
 
-    /// <summary>
-    /// Whether the Custom Tailoring submenu is open.
-    /// </summary>
-    private bool tailoringMenuOpen;
-
-    private void ToggleTailoringMenu()
+    private void ToggleNavbar()
     {
-        tailoringMenuOpen = !tailoringMenuOpen;
+        navbarOpen = !navbarOpen;
     }
 
+    private void ToggleTailoringDropdown()
+    {
+        tailoringDropdownOpen = !tailoringDropdownOpen;
+    }
 
-    /// <summary>
-    /// Initializes the navigation menu, loads the current
-    /// user's role and subscribes to cart changes.
-    /// </summary>
+    private void HandleSearch(KeyboardEventArgs e)
+    {
+        // Null check for keyboard event args
+        if (e == null)
+            return;
+
+        // Trigger search on Enter key
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(searchQuery) && NavigationManager != null)
+        {
+            try
+            {
+                // Navigate to shop page with search query
+                NavigationManager.NavigateTo("/shop");
+                searchQuery = "";
+            }
+            catch
+            {
+                // Handle any navigation errors silently
+                searchQuery = "";
+            }
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        // Get current cart count.
         cartItemCount = CartService.GetItemCount();
 
-        // Get current authentication state.
-        var authState =
-            await AuthenticationStateProvider
-                .GetAuthenticationStateAsync();
-
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
-
-        // Check whether the current user is an Admin.
         isAdmin = user.IsInRole("Admin");
 
-        // Subscribe to cart changes.
         CartService.CartChanged += OnCartChanged;
     }
 
-
-    /// <summary>
-    /// Updates the cart count when the shopping cart changes.
-    /// </summary>
     private void OnCartChanged()
     {
         cartItemCount = CartService.GetItemCount();
-
         InvokeAsync(StateHasChanged);
     }
 
-
-    /// <summary>
-    /// Unsubscribes from the cart service when the
-    /// navigation menu is disposed.
-    /// </summary>
     public void Dispose()
     {
         CartService.CartChanged -= OnCartChanged;
     }
+}
 }
