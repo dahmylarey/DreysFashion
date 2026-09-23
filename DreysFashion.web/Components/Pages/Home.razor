@@ -2,6 +2,23 @@
 
 <PageTitle>Drey's Fashion | Modern & Custom Tailoring</PageTitle>
 
+@using DreysFashion.web.ViewModels
+@inject DreysFashion.web.Services.Interfaces.IProductService ProductService
+
+@code {
+    private List<ProductViewModel> featuredProducts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var products = await ProductService.GetAllProductsAsync();
+
+        featuredProducts = products
+            .Where(p => p.IsAvailable)
+            .Take(3)
+            .ToList();
+    }
+}
+
 <section class="hero">
     <div class="hero-content">
         <p class="eyebrow">DREY'S FASHION</p>
@@ -28,42 +45,26 @@
     </div>
 
     <div class="product-grid">
+        @if (featuredProducts == null || !featuredProducts.Any())
+        {
+            <p>Loading featured products…</p>
+        }
+        else
+        {
+            @foreach (var product in featuredProducts)
+            {
+                <article class="product-card">
+                    <div class="product-image">
+                        <img src="@(string.IsNullOrWhiteSpace(product.ImageUrl) ? "/images/placeholder.png" : product.ImageUrl)" alt="@product.Name" />
+                    </div>
 
-        <article class="product-card">
-            <div class="product-image">
-                <span>Agbada</span>
-            </div>
-
-            <div class="product-info">
-                <h3>Classic Agbada</h3>
-                <p>Traditional elegance with a modern touch.</p>
-                <a href="/shop">View Collection →</a>
-            </div>
-        </article>
-
-        <article class="product-card">
-            <div class="product-image">
-                <span>Senator</span>
-            </div>
-
-            <div class="product-info">
-                <h3>Senator Wear</h3>
-                <p>Clean, sophisticated and professionally tailored.</p>
-                <a href="/shop">View Collection →</a>
-            </div>
-        </article>
-
-        <article class="product-card">
-            <div class="product-image">
-                <span>Native</span>
-            </div>
-
-            <div class="product-info">
-                <h3>Native Collection</h3>
-                <p>Contemporary styles made for every occasion.</p>
-                <a href="/shop">View Collection →</a>
-            </div>
-        </article>
-
+                    <div class="product-info">
+                        <h3>@product.Name</h3>
+                        <p>@product.Description</p>
+                        <a href="/shop">View Collection →</a>
+                    </div>
+                </article>
+            }
+        }
     </div>
 </section>

@@ -81,6 +81,32 @@
     color: white;
 }
 
+.nav-link-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+}
+
+.caret-icon {
+    transition: transform 0.15s ease-in-out;
+    font-size: 0.8rem;
+    color: #d7d7d7;
+}
+
+.caret-icon.open {
+    transform: rotate(180deg);
+}
+
+.sub-nav {
+    padding-left: 1.5rem;
+}
+
+.sub-nav .nav-item {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
 .nav-scrollable {
     display: none;
 }

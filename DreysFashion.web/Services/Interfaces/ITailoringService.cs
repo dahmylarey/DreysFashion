@@ -89,5 +89,42 @@ namespace DreysFashion.web.Services.Interfaces
             int requestId,
             decimal quotedAmount,
             string? adminNotes);
+
+
+        /// <summary>
+        /// Associates a Paystack payment reference with a tailoring request.
+        /// </summary>
+        /// <param name="requestId">
+        /// The tailoring request identifier.
+        /// </param>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        Task<bool> SetPaymentReferenceAsync(
+            int requestId,
+            string paymentReference);
+
+        /// <summary>
+        /// Marks a tailoring request as paid after successful
+        /// Paystack verification.
+        /// </summary>
+        /// <param name="requestId">
+        /// The tailoring request identifier.
+        /// </param>
+        /// <param name="paymentReference">
+        /// The verified Paystack transaction reference.
+        /// </param>
+        Task<bool> MarkAsPaidAsync(
+            int requestId,
+            string paymentReference);
+
+        /// <summary>
+        /// Retrieves a tailoring request using its payment reference.
+        /// </summary>
+        /// <param name="paymentReference">
+        /// The Paystack transaction reference.
+        /// </param>
+        Task<TailoringRequest?> GetRequestByPaymentReferenceAsync(
+            string paymentReference);
     }
 }

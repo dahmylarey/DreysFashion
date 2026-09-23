@@ -602,5 +602,20 @@ namespace DreysFashion.web.Services.Implementation
                 // the quote from being saved.
             }
         }
+
+        public Task<bool> SetPaymentReferenceAsync(int requestId, string paymentReference)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> MarkAsPaidAsync(int requestId, string paymentReference)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<TailoringRequest?> GetRequestByPaymentReferenceAsync(string paymentReference)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

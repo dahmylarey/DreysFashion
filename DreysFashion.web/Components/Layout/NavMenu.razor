@@ -26,6 +26,28 @@
 
     <nav class="nav flex-column">
 
+        <!-- ===================================================== -->
+        <!-- ADMIN DASHBOARD -->
+        <!-- Only visible to Admin users -->
+        <!-- ===================================================== -->
+        @if (isAdmin)
+        {
+            <div class="nav-item px-3">
+
+                <NavLink class="nav-link"
+                         href="/admin">
+
+                    <i class="fas fa-tachometer-alt me-2"
+                       aria-hidden="true"></i>
+
+                    Dashboard
+
+                </NavLink>
+
+            </div>
+        }
+
+
         <!-- Home -->
         <div class="nav-item px-3">
 
@@ -90,62 +112,48 @@
         </div>
 
 
-        <!-- Custom Tailoring -->
+        <!-- Custom Tailoring (with dropdown) -->
         <div class="nav-item px-3">
 
-            <NavLink class="nav-link"
-                     href="/custom-tailoring">
+            <a class="nav-link nav-link-toggle"
+               role="button"
+               @onclick="ToggleTailoringMenu">
 
                 <i class="fas fa-scissors me-2" aria-hidden="true"></i>
                 Custom Tailoring
 
-            </NavLink>
+                <i class="fas fa-chevron-down ms-auto caret-icon @(tailoringMenuOpen ? "open" : "")" aria-hidden="true"></i>
+
+            </a>
+
+            @if (tailoringMenuOpen)
+            {
+                <div class="sub-nav">
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link"
+                                 href="/my-measurements">
+
+                            <i class="bi bi-rulers me-2"></i>
+                            My Measurements
+
+                        </NavLink>
+                    </div><br />
+
+                    <div class="nav-item px-3">
+                        <NavLink class="nav-link"
+                                 href="/my-tailoring-requests">
+
+                            <i class="bi bi-list-check me-2"></i>
+                            My Tailoring Requests
+
+                        </NavLink>
+                    </div>
+                </div>
+            }
 
         </div>
 
-
-        <!-- My Measurements -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/my-measurements">
-
-                <i class="bi bi-rulers me-2"></i>
-                My Measurements
-
-            </NavLink>
-
-        </div>
-
-
-        <!-- My Tailoring Requests -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/my-tailoring-requests">
-
-                <i class="bi bi-list-check me-2"></i>
-                My Tailoring Requests
-
-            </NavLink>
-
-        </div>
-
-
-        <!-- About -->
-        <div class="nav-item px-3">
-
-            <NavLink class="nav-link"
-                     href="/about">
-
-                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
-                About
-
-            </NavLink>
-
-        </div>
-
-
+        
         <!-- My Account -->
         <div class="nav-item px-3">
 
@@ -159,27 +167,19 @@
 
         </div>
 
+                
+        <!-- About -->
+        <div class="nav-item px-3">
 
-        <!-- ===================================================== -->
-        <!-- ADMIN DASHBOARD -->
-        <!-- Only visible to Admin users -->
-        <!-- ===================================================== -->
-        @if (isAdmin)
-        {
-            <div class="nav-item px-3">
+            <NavLink class="nav-link"
+                     href="/about">
 
-                <NavLink class="nav-link"
-                         href="/admin">
+                <i class="fas fa-info-circle me-2" aria-hidden="true"></i>
+                About
 
-                    <i class="fas fa-tachometer-alt me-2"
-                       aria-hidden="true"></i>
+            </NavLink>
 
-                    Dashboard
-
-                </NavLink>
-
-            </div>
-        }
+        </div>
 
     </nav>
 
@@ -199,6 +199,16 @@
     /// belongs to the Admin role.
     /// </summary>
     private bool isAdmin;
+
+    /// <summary>
+    /// Whether the Custom Tailoring submenu is open.
+    /// </summary>
+    private bool tailoringMenuOpen;
+
+    private void ToggleTailoringMenu()
+    {
+        tailoringMenuOpen = !tailoringMenuOpen;
+    }
 
 
     /// <summary>
